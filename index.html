@@ -611,8 +611,13 @@ const COMPLEXES = {
   },
 
   // Mapped from the REAL entrance sign (19 buildings, 236 units).
+  // Every unit cell is placed exactly where the sign paints it.
   valle: (function(){
-    const R = (a,b)=>{ const u={}; for(let i=a;i<=b;i++) u[String(i)]=1; return u; };
+    const G = (n,x,y,cw,ch,rows)=>{
+      const units={};
+      rows.forEach(r=>r.forEach(u=>{ if(u!=null) units[String(u)]=1; }));
+      return {n,x,y,w:rows[0].length*cw,h:rows.length*ch,grid:{rows,cw,ch},units,label:'BLDG '+n};
+    };
     return {
       id:'valle',
       name:'Valle Vista',
@@ -641,27 +646,49 @@ const COMPLEXES = {
         {x:64,y:118,w:34,h:16,rx:3,label:'BOILER'},
         {x:306,y:372,w:52,h:16,rx:3,label:'LAUNDRY'}
       ],
+      decor:{
+        grass:[
+          {x:24,y:130,w:44,h:296},{x:84,y:184,w:126,h:70},
+          {x:140,y:278,w:172,h:98},{x:296,y:58,w:78,h:318}
+        ],
+        trees:[
+          [62,148],[58,258],[62,392],[88,428],[168,136],[180,246],[148,286],
+          [176,332],[232,330],[296,254],[298,152],[262,120],[340,242],[300,368],[212,452],[344,102]
+        ],
+        ticks:[
+          {x:62,y:26,step:8,count:15,len:11,dir:'v'},
+          {x:62,y:44,step:8,count:15,len:11,dir:'v'},
+          {x:64,y:268,step:10,count:11,len:13,dir:'h'},
+          {x:86,y:268,step:10,count:11,len:13,dir:'h'},
+          {x:118,y:462,step:9,count:8,len:11,dir:'v'},
+          {x:212,y:462,step:9,count:14,len:11,dir:'v'}
+        ]
+      },
       buildings:[
-        {n:1, x:222,y:428,w:118,h:22,u:R(327,338)},
-        {n:2, x:232,y:340,w:30, h:58,u:R(319,326)},
-        {n:3, x:150,y:296,w:142,h:30,u:R(295,318)},
-        {n:4, x:112,y:255,w:26, h:128,u:R(109,119)},
-        {n:5, x:96, y:400,w:60, h:20,u:R(104,108)},
-        {n:6, x:34, y:400,w:44, h:20,u:R(101,103)},
-        {n:7, x:32, y:262,w:26, h:118,u:R(120,129)},
-        {n:8, x:30, y:140,w:26, h:100,u:R(130,136)},
-        {n:9, x:88, y:196,w:70, h:32,u:R(137,144)},
-        {n:10,x:104,y:132,w:72, h:34,u:R(145,152)},
-        {n:11,x:182,y:150,w:34, h:96,u:R(155,166)},
-        {n:12,x:186,y:84, w:112,h:34,u:R(167,180)},
-        {n:13,x:224,y:140,w:36, h:104,u:R(181,200)},
-        {n:14,x:268,y:130,w:36, h:118,u:R(201,228)},
-        {n:15,x:300,y:66, w:66, h:30,u:R(237,248)},
-        {n:16,x:308,y:118,w:52, h:30,u:R(229,236)},
-        {n:17,x:306,y:252,w:32, h:112,u:R(271,294)},
-        {n:18,x:344,y:252,w:26, h:96,u:R(259,270)},
-        {n:19,x:344,y:152,w:26, h:86,u:R(249,258)}
-      ].map(b=>({...b, label:'BLDG '+b.n, units:b.u}))
+        G(1, 222,428,10,20,[[327,328,329,330,331,332,333,334,335,336,337,338]]),
+        G(2, 232,340,15,14,[[319,320],[321,322],[323,324],[325,326]]),
+        G(3, 148,294,12,15,[[306,305,304,303,302,301,300,299,298,297,296,295],
+                            [308,307,310,309,312,311,314,313,316,315,318,317]]),
+        G(4, 112,255,26,11.5,[[119],[118],[117],[116],[115],[114],[113],[112],[111],[110],[109]]),
+        G(5, 96, 400,12,20,[[104,105,106,107,108]]),
+        G(6, 34, 400,15,20,[[101,102,103]]),
+        G(7, 32, 262,26,11.8,[[129],[128],[127],[126],[125],[124],[123],[122],[121],[120]]),
+        G(8, 30, 140,26,14.3,[[136],[135],[134],[133],[132],[131],[130]]),
+        G(9, 88, 196,17.5,16,[[138,140,142,144],[137,139,141,143]]),
+        G(10,104,132,18,17,[[145,147,149,151],[146,148,150,152]]),
+        G(11,182,150,17,16,[[155,166],[156,165],[157,164],[158,163],[159,162],[160,161]]),
+        G(12,186,84, 16,17,[[168,170,172,174,176,178,180],[167,169,171,173,175,177,179]]),
+        G(13,224,140,18,10.4,[[181,200],[182,199],[183,198],[184,197],[185,196],
+                              [186,195],[187,194],[188,193],[189,192],[190,191]]),
+        G(14,268,130,18,8.4,[[202,228],[201,227],[204,226],[203,225],[206,224],[205,223],[208,222],
+                             [207,221],[210,220],[209,219],[212,218],[211,217],[214,216],[213,215]]),
+        G(15,300,66, 11,15,[[238,240,242,244,246,248],[237,239,241,243,245,247]]),
+        G(16,308,118,13,15,[[229,230,235,236],[231,232,233,234]]),
+        G(17,306,252,16,9.3,[[284,282],[283,281],[286,280],[285,279],[288,278],[287,277],
+                             [290,276],[289,275],[292,274],[291,273],[294,272],[293,271]]),
+        G(18,344,252,13,16,[[259,260],[261,262],[263,264],[265,266],[267,268],[269,270]]),
+        G(19,344,152,13,17.2,[[249,250],[251,252],[253,254],[255,256],[257,258]])
+      ]
     };
   })()
 };
@@ -711,14 +738,31 @@ function renderMap(cx){
 
   let svg = `<svg viewBox="${cx.viewBox}" role="img" aria-label="Site map of ${cx.name}">`;
 
+  const decor = cx.decor || {};
+
+  // grass patches (under everything)
+  for(const g of decor.grass||[]){
+    svg += `<rect x="${g.x}" y="${g.y}" width="${g.w}" height="${g.h}" rx="${g.rx||14}" fill="rgba(63,208,164,.045)"/>`;
+  }
+
   // roads
   for(const r of cx.roads){
     if(r.type==='rect')
       svg += `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="${r.rx}" fill="none" stroke="var(--road)" stroke-width="18"/>
               <rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="${r.rx}" fill="none" stroke="#39445A" stroke-width="1.4" stroke-dasharray="7 9"/>`;
     else
-      svg += `<path d="${r.d}" fill="none" stroke="var(--road)" stroke-width="18" stroke-linecap="round"/>
+      svg += `<path d="${r.d}" fill="none" stroke="var(--road)" stroke-width="${r.w||18}" stroke-linecap="round"/>
               <path d="${r.d}" fill="none" stroke="#39445A" stroke-width="1.4" stroke-dasharray="7 9"/>`;
+  }
+
+  // parking stall ticks
+  for(const t of decor.ticks||[]){
+    for(let i=0;i<t.count;i++){
+      const line = t.dir==='h'
+        ? `M${t.x},${t.y+i*t.step} L${t.x+t.len},${t.y+i*t.step}`
+        : `M${t.x+i*t.step},${t.y} L${t.x+i*t.step},${t.y+t.len}`;
+      svg += `<path d="${line}" stroke="#39445A" stroke-width="1" opacity=".55"/>`;
+    }
   }
 
   // features
@@ -734,11 +778,43 @@ function renderMap(cx){
             <text class="f-label" x="${f.x+f.w/2}" y="${f.y+f.h/2+3}" text-anchor="middle">${f.label}</text>`;
   }
 
-  // buildings
+  // buildings — grid buildings draw every unit as its own cell (like the real sign);
+  // buildings without a grid fall back to a plain labeled block
   for(const b of cx.buildings){
     const hot = hotBldgs.has(b.n);
-    svg += `<rect class="b-rect${hot?' hot':''}" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="7"/>
-            <text class="b-label" x="${b.x+b.w/2}" y="${b.y+b.h/2+4}" text-anchor="middle"${hot?' fill="var(--amber)"':''}>${b.n}</text>`;
+    if(b.grid){
+      const {rows, cw, ch} = b.grid;
+      const cols = rows[0].length;
+      const fs = Math.max(3.6, Math.min(5, Math.min(cw, ch)*0.42));
+      const cellFill = hot ? 'rgba(255,176,32,.13)' : '#232C39';
+      const cellStroke = hot ? 'rgba(255,176,32,.55)' : '#3A4657';
+      const txtFill = hot ? 'rgba(255,190,80,.95)' : '#7E8798';
+      for(let r=0;r<rows.length;r++){
+        for(let c=0;c<cols;c++){
+          const u = rows[r][c];
+          if(u==null) continue;
+          // sawtooth articulation: tall 2-col towers jog alternate rows,
+          // long strips jog alternate columns — same as the painted sign
+          const jog = cols<=2 ? {dx:(r%2)?1.6:0, dy:0} : {dx:0, dy:(c%2)?1.8:0};
+          const x = b.x + c*cw + jog.dx, y = b.y + r*ch + jog.dy;
+          svg += `<rect x="${x}" y="${y}" width="${cw-0.7}" height="${ch-0.7}" rx="1.4" fill="${cellFill}" stroke="${cellStroke}" stroke-width="0.55"/>
+                  <text x="${x+(cw-0.7)/2}" y="${y+(ch-0.7)/2+fs*0.36}" text-anchor="middle" style="font:600 ${fs}px 'Overpass Mono',monospace" fill="${txtFill}">${u}</text>`;
+        }
+      }
+      // circled building number, like the sign
+      const bx = b.x+b.w/2, by = b.y+b.h/2;
+      svg += `<circle cx="${bx}" cy="${by}" r="6.2" fill="#0D1117" stroke="${hot?'var(--amber)':'#8C96A6'}" stroke-width="1"/>
+              <text x="${bx}" y="${by+2.4}" text-anchor="middle" style="font:800 6.4px 'Overpass Mono',monospace" fill="${hot?'var(--amber)':'#C6CEDA'}">${b.n}</text>`;
+    } else {
+      svg += `<rect class="b-rect${hot?' hot':''}" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="7"/>
+              <text class="b-label" x="${b.x+b.w/2}" y="${b.y+b.h/2+4}" text-anchor="middle"${hot?' fill="var(--amber)"':''}>${b.n}</text>`;
+    }
+  }
+
+  // trees (drawn over buildings' edges, like the sign's landscaping)
+  for(const t of decor.trees||[]){
+    svg += `<circle cx="${t[0]}" cy="${t[1]}" r="5.2" fill="#2F5140" opacity=".95"/>
+            <circle cx="${t[0]+3.4}" cy="${t[1]+2.6}" r="3.4" fill="#3E6B52" opacity=".95"/>`;
   }
 
   // pins
