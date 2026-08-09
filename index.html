@@ -233,6 +233,34 @@ input{font-family:inherit}
 .stop-where{flex:1;font-size:12px;color:var(--dim)}
 .stop-x{color:var(--dim);font-size:16px;padding:2px 6px}
 .stop-x:hover{color:var(--danger)}
+.stop-ord{
+  flex:none;width:20px;height:20px;border-radius:6px;background:var(--amber);
+  color:#181000;font-family:'Overpass Mono',monospace;font-size:11px;font-weight:700;
+  display:grid;place-items:center;
+}
+.stop-chip.done .stop-ord{background:var(--panel2);color:var(--dim)}
+.chip-warn{flex:none;font-size:13px}
+.sorted-note{
+  display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--teal);
+  margin:-4px 0 10px;letter-spacing:.03em;
+}
+.guide-hazard{
+  display:flex;gap:10px;align-items:flex-start;background:rgba(255,107,94,.1);
+  border:1px solid rgba(255,107,94,.4);border-radius:11px;padding:10px 13px;
+  font-size:13px;font-weight:700;line-height:1.45;margin-bottom:12px;color:#FFB4AC;
+}
+.guide-voice{
+  font-size:16px;padding:4px 8px;border-radius:8px;background:var(--panel);
+  border:1px solid var(--line);
+}
+.lockers-chip{
+  display:inline-flex;align-items:center;gap:7px;background:#0D1117;
+  border:1px solid var(--teal);border-radius:9px;padding:4px 9px 3px;
+  font-family:'Overpass Mono',monospace;font-size:13px;font-weight:700;
+  color:var(--teal);letter-spacing:.08em;margin-left:6px;
+}
+.lockers-chip button{font-size:9px;color:var(--dim);letter-spacing:.05em;font-weight:700}
+.lockers-chip button:hover{color:var(--paint)}
 .legend{
   display:flex;gap:14px;font-size:10.5px;color:var(--dim);margin-top:8px;
   letter-spacing:.04em;
@@ -531,6 +559,8 @@ const COMPLEXES = {
     addr:'2200 Stonebridge Pkwy',
     dist:'0.3 mi', mappedBy:'Mapped by 12 drivers', mapped:true,
     gate:{code:'#4482', label:'Gate code'},
+    lockers:{where:'Smart-locker bank — mail breezeway, inside the loop', code:'#2211'},
+    notes:{'512':{icon:'🌙', text:'Resident works nights — leave quietly, no knock', warn:false}},
     access:[
       ['Bldg doors','Locked after 8 PM — fob at office till 6'],
       ['Drop-off','Leave-at-door OK, photo required'],
@@ -547,6 +577,7 @@ const COMPLEXES = {
       {x:116,y:146,w:60,h:44,rx:8,label:'OFFICE'},
       {x:188,y:146,w:60,h:44,rx:16,label:'POOL'},
       {x:146,y:222,w:68,h:30,rx:6,label:'MAIL'},
+      {x:146,y:258,w:68,h:16,rx:4,label:'LOCKERS',lockerBank:true},
       {x:180,y:508,gate:true}
     ],
     buildings:[
@@ -624,6 +655,8 @@ const COMPLEXES = {
       addr:'9901 Club Creek Dr, Houston, TX 77036',
       dist:'2.1 mi', mappedBy:'Mapped from the entrance sign · 236 units', mapped:true,
       gate:null,
+      lockers:null,
+      notes:{'214':{icon:'🐕', text:'Dog behind this door — knock and step back', warn:true}},
       access:[
         ['Entry','No gate — open entrances off Club Creek Dr (main, by the office) & Woodfair Dr'],
         ['Bldg doors','Every unit has its own ground-level door'],
@@ -698,6 +731,7 @@ const state = {
   cx:null,                       // selected complex id
   stops:[],                      // {unit, bldg, floor, done}
   guideIdx:null,
+  voiceOn:true,                  // spoken guidance
   contribStep:0,
   pinehurstMapped:false,
   contrib:{                      // data the driver enters while mapping
@@ -729,6 +763,38 @@ function findUnit(cx, raw){
   return null;
 }
 function ord(f){ return f===1?'1st floor':f===2?'2nd floor':f===3?'3rd floor':f+'th floor'; }
+
+/* Spoken guidance — hands on the wheel, eyes on the lot */
+function speak(text){
+  if(!state.voiceOn || !('speechSynthesis' in window)) return;
+  try{
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 1.05;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+/* Greedy nearest-neighbor sort: order undone stops into the drive
+   sequence from the entrance — the way you'd actually run the route */
+function sortStops(cx){
+  const done = state.stops.filter(s=>s.done);
+  const pool = state.stops.filter(s=>!s.done);
+  let cur = cx.entrance ? {x:cx.entrance.x, y:cx.entrance.y} : {x:180, y:560};
+  const ordered = [];
+  while(pool.length){
+    let bi = 0, bd = Infinity;
+    pool.forEach((s,i)=>{
+      const bx = s.bldg.x+s.bldg.w/2, by = s.bldg.y+s.bldg.h/2;
+      const d = (bx-cur.x)*(bx-cur.x) + (by-cur.y)*(by-cur.y);
+      if(d<bd){ bd=d; bi=i; }
+    });
+    const s = pool.splice(bi,1)[0];
+    ordered.push(s);
+    cur = {x:s.bldg.x+s.bldg.w/2, y:s.bldg.y+s.bldg.h/2};
+  }
+  state.stops = [...done, ...ordered];
+}
 
 /* ---------- map renderer ---------- */
 function renderMap(cx){
@@ -772,6 +838,11 @@ function renderMap(cx){
         <rect x="-26" y="-5" width="52" height="10" rx="4" fill="#0D1117" stroke="var(--amber)" stroke-width="1.4"/>
         <text x="0" y="2.8" text-anchor="middle" style="font:800 6.5px 'Overpass Mono',monospace;letter-spacing:.14em" fill="var(--amber)">GATE</text>
       </g>`;
+      continue;
+    }
+    if(f.lockerBank){
+      svg += `<rect x="${f.x}" y="${f.y}" width="${f.w}" height="${f.h}" rx="${f.rx}" fill="rgba(63,208,164,.1)" stroke="var(--teal)" stroke-width="1"/>
+              <text x="${f.x+f.w/2}" y="${f.y+f.h/2+3}" text-anchor="middle" style="font:800 7px 'Overpass Mono',monospace;letter-spacing:.14em" fill="var(--teal)">${f.label}</text>`;
       continue;
     }
     svg += `<rect x="${f.x}" y="${f.y}" width="${f.w}" height="${f.h}" rx="${f.rx}" fill="#1B2230" stroke="#2C3644" stroke-width="1"/>
@@ -889,13 +960,17 @@ function renderRoute(){
   const accessRows = cx.access.map(([k,val])=>`
     <div class="access-row"><span class="k">${k}</span><span class="v">${val}</span></div>`).join('');
 
-  const stopRows = state.stops.map((s,i)=>`
+  const stopRows = state.stops.map((s,i)=>{
+    const note = (cx.notes||{})[s.unit];
+    return `
     <div class="stop-chip${s.done?' done':''}">
+      <span class="stop-ord">${i+1}</span>
       <button class="stop-unit mono" data-guide="${i}" aria-label="Guide to unit ${s.unit}">${s.unit}</button>
       <span class="floorbadge">F${s.floor}</span>
+      ${note?`<span class="chip-warn" title="${note.text}">${note.icon}</span>`:''}
       <button class="stop-where" data-guide="${i}">${s.bldg.label} · ${ord(s.floor)}${s.done?' · delivered ✓':''}</button>
       <button class="stop-x" data-del="${i}" aria-label="Remove unit ${s.unit}">×</button>
-    </div>`).join('');
+    </div>`;}).join('');
 
   v.innerHTML = `
     <div class="cx-header">
@@ -909,6 +984,11 @@ function renderRoute(){
       <div class="access-title">⚿ Access — before you pull in</div>
       ${cx.gate ? `<div class="access-row"><span class="k">${cx.gate.label}</span>
         <span class="gatecode">${cx.gate.code}<button id="copyGate">COPY</button></span></div>` : ''}
+      <div class="access-row"><span class="k">Lockers</span>
+        ${cx.lockers
+          ? `<span class="v">${cx.lockers.where}<span class="lockers-chip">${cx.lockers.code}<button id="copyLocker">COPY</button></span></span>`
+          : `<span class="v" style="color:var(--dim)">None — doorstep delivery only</span>`}
+      </div>
       ${accessRows}
     </div>
 
@@ -920,6 +1000,7 @@ function renderRoute(){
     </div>
     <button class="sample-link" id="loadSample">Load a sample route</button>
 
+    ${state.stops.length>1 ? `<div class="sorted-note">✓ Sorted into drive order from the entrance</div>` : ''}
     <div class="stops-list">${stopRows}</div>
 
     <div class="mapwrap">
@@ -949,8 +1030,9 @@ function renderRoute(){
       added++;
     }
     input.value='';
+    sortStops(cx);
     if(misses.length) toast(`Not at this complex: ${misses.join(', ')}`);
-    else if(added) toast(`${added} stop${added>1?'s':''} pinned`);
+    else if(added) toast(`${added} stop${added>1?'s':''} pinned & sorted`);
     renderRoute();
   };
   $('#addStops').addEventListener('click', add);
@@ -959,10 +1041,11 @@ function renderRoute(){
   $('#loadSample').addEventListener('click', ()=>{
     const samples = cx.id==='lakeview' ? ['B204','E102','A203'] :
                     cx.id==='pinehurst' ? ['P103','P205'] :
-                    cx.id==='valle' ? ['219','130','331'] : ['204','512','1107'];
+                    cx.id==='valle' ? ['214','130','331'] : ['204','512','1107'];
     state.stops = samples.map(u=>({...findUnit(cx,u), done:false})).filter(s=>s.unit);
+    sortStops(cx);
     renderRoute();
-    toast('Sample route loaded');
+    toast('Sample route loaded & sorted');
   });
 
   v.querySelectorAll('[data-del]').forEach(el=>el.addEventListener('click', ()=>{
@@ -978,6 +1061,11 @@ function renderRoute(){
     navigator.clipboard && navigator.clipboard.writeText(cx.gate.code.replace('#',''));
     toast('Gate code copied');
   });
+  const cl = $('#copyLocker');
+  if(cl) cl.addEventListener('click', ()=>{
+    navigator.clipboard && navigator.clipboard.writeText(cx.lockers.code.replace('#',''));
+    toast('Locker code copied');
+  });
 }
 
 /* ---------- guide ---------- */
@@ -991,14 +1079,20 @@ function openGuide(i){
   const stairNote = s.floor===1 ? 'Ground level — door faces the parking side.' :
                     `Take the ${s.bldg.n===2||s.bldg.n==='B'?'left':'center'} stairwell up to floor ${s.floor}.`;
 
+  const doorNote = (cx.notes||{})[s.unit];
+
   g.innerHTML = `
     <div class="guide-top">
       <span class="guide-step">Stop ${i+1} of ${state.stops.length}</span>
-      <button class="guide-close" id="closeGuide" aria-label="Close guide">×</button>
+      <span style="display:flex;gap:8px">
+        <button class="guide-voice" id="voiceBtn" aria-label="Toggle spoken guidance">${state.voiceOn?'🔊':'🔇'}</button>
+        <button class="guide-close" id="closeGuide" aria-label="Close guide">×</button>
+      </span>
     </div>
     <div class="guide-unit">${s.unit}</div>
     <div class="guide-where">${s.bldg.label} · ${ord(s.floor)}</div>
     <p class="guide-note">${stairNote}</p>
+    ${doorNote?`<div class="guide-hazard">${doorNote.icon} ${doorNote.text}</div>`:''}
 
     <div class="compass">
       <span class="sim-tag">Simulated GPS</span>
@@ -1019,6 +1113,21 @@ function openGuide(i){
     <button class="btn deliver wide" id="markDone">Mark ${s.unit} delivered ✓</button>
   `;
   g.classList.add('open');
+
+  // spoken briefing for this stop
+  speak(
+    `Stop ${i+1} of ${state.stops.length}. Unit ${s.unit.split('').join(' ')}. ` +
+    `Building ${s.bldg.n}, ${s.floor===1?'ground level':ord(s.floor)}. ` +
+    (cx.gate && i===0 ? `Gate code ${cx.gate.code.replace('#','').split('').join(' ')}. ` : '') +
+    (doorNote ? `Heads up: ${doorNote.text}.` : '')
+  );
+
+  $('#voiceBtn').addEventListener('click', ()=>{
+    state.voiceOn = !state.voiceOn;
+    if(!state.voiceOn && 'speechSynthesis' in window) speechSynthesis.cancel();
+    $('#voiceBtn').textContent = state.voiceOn ? '🔊' : '🔇';
+    toast(state.voiceOn ? 'Voice guidance on' : 'Voice guidance off');
+  });
 
   // simulated distance countdown
   clearInterval(distTimer);
@@ -1044,6 +1153,7 @@ function openGuide(i){
 }
 function closeGuide(){
   clearInterval(distTimer);
+  if('speechSynthesis' in window) speechSynthesis.cancel();
   $('#guide').classList.remove('open');
   renderRoute();
 }
