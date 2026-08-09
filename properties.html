@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GridDrop for Properties — List Your Community</title>
+<meta name="description" content="Give delivery drivers your property map, locker info, and delivery rules — fewer lost drivers on your property, fewer misdeliveries, fewer resident complaints. Free listing for apartment communities.">
+<link rel="canonical" href="https://jhughes281.github.io/griddrop/properties.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;700;800;900&family=Overpass+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --asphalt:#12161D; --panel:#1A202B; --panel2:#232B38; --line:#2C3644;
+  --paint:#E9ECF1; --dim:#8C96A6; --amber:#FFB020; --amber-soft:rgba(255,176,32,.14);
+  --teal:#3FD0A4; --radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Overpass',system-ui,sans-serif;background:var(--asphalt);color:var(--paint);
+  line-height:1.6;
+  background-image:linear-gradient(rgba(233,236,241,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(233,236,241,.025) 1px, transparent 1px);
+  background-size:56px 56px;
+}
+a{color:var(--amber)}
+.wrap{max-width:820px;margin:0 auto;padding:56px 24px 100px}
+.wordmark{display:flex;align-items:center;gap:12px;margin-bottom:34px}
+.wordmark span{font-size:24px;font-weight:900}
+.wordmark span em{font-style:normal;color:var(--amber)}
+.wordmark a.demo{margin-left:auto;font-size:13px;font-weight:800;text-decoration:none;background:none;border:1px solid var(--line);color:var(--paint);border-radius:10px;padding:9px 16px 8px}
+.eyebrow{font-size:12px;letter-spacing:.22em;font-weight:700;color:var(--amber);text-transform:uppercase;margin-bottom:14px}
+h1{font-size:clamp(32px,5vw,46px);font-weight:900;line-height:1.08;letter-spacing:-.02em;margin-bottom:16px}
+h1 .amber{color:var(--amber)}
+.lede{font-size:16.5px;color:var(--dim);max-width:620px;margin-bottom:26px}
+.benefits{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:26px 0 40px}
+.b-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px}
+.b-card h3{font-size:14.5px;font-weight:800;margin-bottom:6px;color:var(--teal)}
+.b-card p{font-size:13px;color:var(--dim);margin:0}
+h2{font-size:20px;font-weight:900;margin:40px 0 8px}
+.formcard{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:30px;margin-top:18px}
+.f-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:640px){.f-row{grid-template-columns:1fr}}
+.f-group{margin-bottom:14px}
+.f-group label{display:block;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;font-weight:700}
+.f-group input,.f-group select,.f-group textarea{
+  width:100%;background:#0D1117;border:1px solid var(--line);border-radius:10px;
+  padding:11px 13px;color:var(--paint);font-size:14px;outline:none;font-family:inherit;
+  transition:border-color .2s;
+}
+.f-group input:focus,.f-group select:focus,.f-group textarea:focus{border-color:var(--amber)}
+.f-group select option{background:#12161D}
+.f-group textarea{height:80px;resize:vertical}
+.hint{font-size:11.5px;color:var(--dim);margin-top:5px;line-height:1.5}
+.submit{
+  width:100%;background:var(--amber);color:#181000;font-weight:800;font-size:15px;
+  border:none;border-radius:12px;padding:14px;cursor:pointer;letter-spacing:.02em;
+  font-family:inherit;transition:transform .12s;
+}
+.submit:hover{transform:translateY(-1px)}
+.f-status{display:none;margin-top:14px;padding:12px 16px;border-radius:10px;font-size:14px;line-height:1.5}
+.f-status.ok{display:block;background:rgba(63,208,164,.1);border:1px solid rgba(63,208,164,.4);color:var(--teal)}
+.f-status.err{display:block;background:rgba(255,107,94,.1);border:1px solid rgba(255,107,94,.4);color:#FFB4AC}
+.zen{
+  margin-top:34px;border-left:3px solid var(--teal);background:rgba(63,208,164,.06);
+  border-radius:0 12px 12px 0;padding:16px 20px;
+}
+.zen p{font-size:13.5px;color:var(--dim);margin:0}
+.zen b{color:var(--teal)}
+.foot{margin-top:40px;font-size:12px;color:var(--dim);opacity:.8;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="wordmark">
+  <svg width="38" height="38" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+    <rect x="2" y="2" width="36" height="36" rx="9" fill="#1A202B" stroke="#2C3644"/>
+    <rect x="8" y="8" width="10" height="10" rx="2" fill="#3A4657"/>
+    <rect x="22" y="8" width="10" height="10" rx="2" fill="#3A4657"/>
+    <rect x="8" y="22" width="10" height="10" rx="2" fill="#3A4657"/>
+    <rect x="22" y="22" width="10" height="10" rx="2" fill="#FFB020"/>
+    <circle cx="27" cy="27" r="2.4" fill="#12161D"/>
+  </svg>
+  <span>Grid<em>Drop</em> <span style="font-weight:600;font-size:14px;color:var(--dim)">for Properties</span></span>
+  <a class="demo" href="index.html">See the driver app &rarr;</a>
+</div>
+
+<p class="eyebrow">Free listing · Houston apartment communities</p>
+<h1>Every carrier's drivers, <span class="amber">reading from your map.</span></h1>
+<p class="lede">Lost delivery drivers circle your property, misdeliver packages, prop doors, and ring your office for gate help — every day, from every carrier. GridDrop puts <b style="color:var(--paint)">your</b> official property map and delivery rules in drivers' hands before they pull in. Listing is free, you control what's shared, and you can update or remove it anytime.</p>
+
+<div class="benefits">
+  <div class="b-card"><h3>Fewer lost drivers</h3><p>Unit-to-building pins mean drivers stop wandering your breezeways and knocking on wrong doors.</p></div>
+  <div class="b-card"><h3>Fewer misdeliveries</h3><p>Your delivery rules — lockers first, oversize to the door, concierge only — shown to every courier, every carrier.</p></div>
+  <div class="b-card"><h3>You hold the keys</h3><p>Share only what you want. Rotate or pull access info anytime. Sanctioned beats codes being texted around.</p></div>
+</div>
+
+<h2>List your property</h2>
+<p class="lede" style="font-size:14px;margin-bottom:0">Five minutes. Have your printed site map handy — the one your leasing office hands out.</p>
+
+<div class="formcard">
+<form id="propForm" novalidate>
+  <div class="f-row">
+    <div class="f-group"><label>Property name *</label><input type="text" name="property" placeholder="e.g. Napoleon Square"/></div>
+    <div class="f-group"><label>Main address *</label><input type="text" name="address" placeholder="6001 Gulfton St, Houston, TX 77081"/></div>
+  </div>
+  <div class="f-group"><label>Other addresses on the property</label><input type="text" name="other_addresses" placeholder="Large properties often answer to several — list them all"/></div>
+  <div class="f-row">
+    <div class="f-group"><label>Your name *</label><input type="text" name="contact_name" placeholder="Property manager / leasing"/></div>
+    <div class="f-group"><label>Work email *</label><input type="email" name="email" required placeholder="you@property.com"/></div>
+  </div>
+  <div class="f-row">
+    <div class="f-group"><label>Office phone</label><input type="tel" name="phone" placeholder="713 000 0000"/></div>
+    <div class="f-group"><label>Number of units</label><input type="text" name="units" placeholder="e.g. 236"/></div>
+  </div>
+  <div class="f-row">
+    <div class="f-group"><label>Gated entry?</label>
+      <select name="gated"><option>No gate</option><option>Gated — code we'll share with verified couriers</option><option>Gated — call box only</option></select>
+    </div>
+    <div class="f-group"><label>Delivery model</label>
+      <select name="delivery_model"><option>Doorstep delivery</option><option>Concierge / front desk only</option><option>Package room</option><option>Mixed — depends on size</option></select>
+    </div>
+  </div>
+  <div class="f-row">
+    <div class="f-group"><label>Parcel lockers on site? *</label>
+      <select name="lockers"><option value="">Select…</option><option>No lockers</option><option>Yes — lockers installed</option><option>Package room, no lockers</option><option>Not sure</option></select>
+    </div>
+    <div class="f-group"><label>If yes — brand &amp; location</label><input type="text" name="locker_details" placeholder="e.g. by the mail room"/></div>
+  </div>
+  <div class="f-group"><label>Oversize packages go…</label>
+    <select name="oversize"><option>To the resident's door</option><option>To the office</option><option>To the front desk</option><option>No policy</option></select>
+  </div>
+  <div class="f-group"><label>Site map</label>
+    <input type="text" name="map_link" placeholder="Paste a link (Drive, Dropbox, photo) — or we'll reply and you can attach it"/>
+    <p class="hint">A phone photo of your printed leasing map is perfect. We turn it into the driver map and send it back for your approval before it goes live.</p>
+  </div>
+  <div class="f-group"><label>Anything drivers should know</label>
+    <textarea name="notes" placeholder="Pickup rules, quiet hours, where not to park, buildings with confusing numbers…"></textarea>
+  </div>
+  <input type="hidden" name="access_key" value="YOUR_ACCESS_KEY"/>
+  <input type="hidden" name="subject" value="GridDrop property submission"/>
+  <input type="hidden" name="from_name" value="GridDrop for Properties"/>
+  <input type="checkbox" name="botcheck" tabindex="-1" autocomplete="off" style="display:none !important;"/>
+  <button type="submit" class="submit">Submit my property &rarr;</button>
+  <p id="pfStatus" class="f-status" role="status" aria-live="polite"></p>
+</form>
+</div>
+
+<div class="zen">
+  <p><b>No lockers at your property?</b> GridDrop is built by the team behind <a href="https://zenlockers.com" target="_blank" rel="noopener">Zen Lockers</a> — Houston-local smart parcel lockers, installed and serviced by us. Mention it in your submission and we'll include a free locker assessment for your property. One team: the map <i>and</i> the hardware.</p>
+</div>
+
+<p class="foot">GridDrop is an independent service by Jay Hughes, Houston TX — not affiliated with any carrier. Property listings are voluntary, free, and removable on request. Access details (gates, codes) are only ever shown to identity-verified couriers, and only with the property's consent.</p>
+
+</div>
+
+<script>
+(function(){
+  var INBOX = "jayhughes@hughesstrategic.net";
+  var form = document.getElementById('propForm');
+  var statusEl = document.getElementById('pfStatus');
+  if(!form) return;
+  function show(msg, ok){ statusEl.textContent = msg; statusEl.className = 'f-status ' + (ok ? 'ok' : 'err'); }
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var data = new FormData(form);
+    var email = (data.get('email')||'').trim();
+    var prop = (data.get('property')||'').trim();
+    if(!prop){ show('Please add your property name.', false); return; }
+    if(!email || email.indexOf('@') === -1){ show('Please enter a work email so we can reply.', false); return; }
+    if(!(data.get('lockers')||'').trim()){ show('Please tell us whether the property has parcel lockers.', false); return; }
+
+    var key = (data.get('access_key')||'').trim();
+    var configured = key && key.indexOf('YOUR_ACCESS_KEY') === -1;
+    if(configured){
+      var btn = form.querySelector('.submit'); var label = btn.innerHTML;
+      btn.disabled = true; btn.innerHTML = 'Sending…';
+      fetch('https://api.web3forms.com/submit', { method:'POST', body:data, headers:{'Accept':'application/json'} })
+        .then(function(r){ return r.json(); })
+        .then(function(j){
+          if(j && j.success){ form.reset(); show('Thank you! Your property is in the queue — we\'ll draft the driver map and send it for your approval.', true); }
+          else { show('Something went wrong — please email us at ' + INBOX + '.', false); }
+        })
+        .catch(function(){ show('Network error — please email us at ' + INBOX + '.', false); })
+        .finally(function(){ btn.disabled = false; btn.innerHTML = label; });
+    } else {
+      var fields = ['property','address','other_addresses','contact_name','email','phone','units','gated','delivery_model','lockers','locker_details','oversize','map_link','notes'];
+      var body = fields.map(function(f){ return f.replace(/_/g,' ') + ': ' + (data.get(f)||''); }).join('\n');
+      show('Opening your email app to send the submission… If nothing happens, email us at ' + INBOX + '.', true);
+      window.location.href = 'mailto:' + INBOX +
+        '?subject=' + encodeURIComponent('GridDrop property submission — ' + prop) +
+        '&body=' + encodeURIComponent(body);
+    }
+  });
+})();
+</script>
+</body>
+</html>
