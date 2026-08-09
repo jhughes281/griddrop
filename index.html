@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>GridDrop — The complex is already mapped</title>
+<meta name="description" content="GridDrop concept prototype: apartment complexes mapped for delivery drivers — unit pins, floor levels, and gate codes before you're off the main road.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;700;800;900&family=Overpass+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --asphalt:#12161D;
+  --panel:#1A202B;
+  --panel2:#232B38;
+  --line:#2C3644;
+  --paint:#E9ECF1;
+  --dim:#8C96A6;
+  --amber:#FFB020;
+  --amber-soft:rgba(255,176,32,.14);
+  --teal:#3FD0A4;
+  --danger:#FF6B5E;
+  --road:#222A36;
+  --bldg:#242E3C;
+  --bldg-line:#3A4657;
+  --radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:'Overpass',system-ui,sans-serif;
+  background:var(--asphalt);
+  color:var(--paint);
+  min-height:100vh;
+  /* faint parking-lot stencil grid */
+  background-image:
+    linear-gradient(rgba(233,236,241,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(233,236,241,.025) 1px, transparent 1px);
+  background-size:56px 56px;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+input{font-family:inherit}
+.mono{font-family:'Overpass Mono',monospace}
+
+/* ===== Stage: pitch panel + device ===== */
+.stage{
+  display:grid;
+  grid-template-columns:minmax(340px,460px) auto;
+  gap:56px;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+  padding:40px 32px;
+  max-width:1200px;
+  margin:0 auto;
+}
+.pitch{max-width:460px}
+.eyebrow{
+  font-size:12px;letter-spacing:.22em;font-weight:700;color:var(--amber);
+  text-transform:uppercase;margin-bottom:18px;
+}
+.wordmark{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.wordmark svg{flex:none}
+.wordmark span{font-size:26px;font-weight:900;letter-spacing:-.01em}
+.wordmark span em{font-style:normal;color:var(--amber)}
+.pitch h1{
+  font-size:clamp(34px,4vw,46px);font-weight:900;line-height:1.04;
+  letter-spacing:-.02em;margin-bottom:16px;
+}
+.pitch h1 .amber{color:var(--amber)}
+.pitch .sub{font-size:16px;line-height:1.55;color:var(--dim);margin-bottom:30px}
+.how{display:flex;flex-direction:column;gap:14px;margin-bottom:30px}
+.how-item{display:flex;gap:14px;align-items:flex-start}
+.how-item .tick{
+  flex:none;width:34px;height:34px;border-radius:9px;background:var(--panel2);
+  border:1px solid var(--line);display:grid;place-items:center;
+  font-family:'Overpass Mono',monospace;font-weight:700;font-size:13px;color:var(--amber);
+}
+.how-item b{display:block;font-size:14.5px;font-weight:800;margin-bottom:2px}
+.how-item p{font-size:13.5px;color:var(--dim);line-height:1.45}
+.netline{
+  border-left:3px solid var(--amber);padding:10px 16px;background:var(--amber-soft);
+  border-radius:0 10px 10px 0;font-size:14px;line-height:1.5;margin-bottom:26px;
+}
+.netline b{color:var(--amber)}
+.fineprint{font-size:12px;color:var(--dim);line-height:1.55;opacity:.8}
+
+/* ===== Phone ===== */
+.device{
+  width:392px;height:800px;flex:none;
+  background:#05070B;border-radius:48px;padding:10px;
+  border:1px solid #2A3340;
+  box-shadow:0 40px 90px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.03) inset;
+  position:relative;
+}
+.screen{
+  width:100%;height:100%;background:var(--asphalt);border-radius:40px;
+  overflow:hidden;position:relative;display:flex;flex-direction:column;
+}
+.notch{
+  position:absolute;top:12px;left:50%;transform:translateX(-50%);
+  width:112px;height:26px;background:#05070B;border-radius:14px;z-index:60;
+}
+.statusbar{
+  height:44px;flex:none;display:flex;justify-content:space-between;align-items:flex-end;
+  padding:0 26px 4px;font-size:13px;font-weight:700;
+  font-family:'Overpass Mono',monospace;color:var(--dim);
+}
+
+/* ===== App chrome ===== */
+.app-main{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px 16px 90px;scrollbar-width:none}
+.app-main::-webkit-scrollbar{display:none}
+.tabbar{
+  position:absolute;bottom:0;left:0;right:0;height:76px;z-index:40;
+  background:linear-gradient(to top, #0D1117 60%, rgba(13,17,23,.85));
+  border-top:1px solid var(--line);
+  display:flex;justify-content:space-around;align-items:flex-start;padding-top:10px;
+}
+.tab{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  font-size:10.5px;font-weight:700;letter-spacing:.06em;color:var(--dim);
+  width:90px;padding:4px 0;border-radius:10px;text-transform:uppercase;
+}
+.tab svg{opacity:.75}
+.tab.active{color:var(--amber)}
+.tab.active svg{opacity:1}
+
+.view{display:none}
+.view.active{display:block;animation:viewin .25s ease}
+@keyframes viewin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.h-screen{font-size:22px;font-weight:900;letter-spacing:-.01em;margin:6px 0 2px}
+.h-sub{font-size:13px;color:var(--dim);margin-bottom:16px;line-height:1.4}
+
+/* ===== Network list ===== */
+.searchbox{
+  display:flex;align-items:center;gap:10px;background:var(--panel);
+  border:1px solid var(--line);border-radius:12px;padding:11px 14px;margin-bottom:14px;
+}
+.searchbox input{
+  flex:1;background:none;border:none;color:var(--paint);font-size:14px;outline:none;
+}
+.searchbox input::placeholder{color:var(--dim)}
+.cx-card{
+  width:100%;text-align:left;background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;
+  display:flex;align-items:center;gap:14px;transition:border-color .15s, transform .15s;
+}
+.cx-card:hover{border-color:var(--amber);transform:translateY(-1px)}
+.cx-thumb{
+  flex:none;width:52px;height:52px;border-radius:11px;background:var(--panel2);
+  border:1px solid var(--line);display:grid;place-items:center;
+}
+.cx-body{flex:1;min-width:0}
+.cx-name{font-size:15px;font-weight:800;margin-bottom:2px}
+.cx-meta{font-size:12px;color:var(--dim)}
+.cx-badge{
+  flex:none;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  padding:5px 9px 4px;border-radius:999px;
+}
+.cx-badge.mapped{background:rgba(63,208,164,.12);color:var(--teal)}
+.cx-badge.unmapped{background:var(--amber-soft);color:var(--amber)}
+
+/* ===== Route view ===== */
+.cx-header{display:flex;align-items:center;gap:10px;margin:4px 0 12px}
+.backbtn{
+  width:34px;height:34px;flex:none;border-radius:10px;background:var(--panel);
+  border:1px solid var(--line);display:grid;place-items:center;color:var(--dim);
+}
+.cx-header h2{font-size:18px;font-weight:900;letter-spacing:-.01em}
+.cx-header p{font-size:11.5px;color:var(--dim)}
+
+.access{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:12px 14px;margin-bottom:12px;
+}
+.access-title{
+  font-size:10.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:9px;display:flex;align-items:center;gap:6px;
+}
+.access-row{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:13px}
+.access-row .k{color:var(--dim);width:88px;flex:none;font-size:12px}
+.access-row .v{font-weight:700;flex:1;line-height:1.35}
+.gatecode{
+  display:inline-flex;align-items:center;gap:8px;background:#0D1117;
+  border:1px solid var(--amber);border-radius:9px;padding:5px 10px 4px;
+  font-family:'Overpass Mono',monospace;font-size:16px;font-weight:700;
+  color:var(--amber);letter-spacing:.12em;
+}
+.gatecode button{font-size:10px;color:var(--dim);letter-spacing:.05em;font-weight:700}
+.gatecode button:hover{color:var(--paint)}
+.floornote{
+  font-size:12px;line-height:1.5;color:var(--amber);
+  background:var(--amber-soft);border-radius:10px;padding:9px 12px;margin-bottom:12px;
+}
+.stops-entry{display:flex;gap:8px;margin-bottom:10px}
+.stops-entry input{
+  flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:11px 14px;color:var(--paint);font-size:14px;outline:none;
+  font-family:'Overpass Mono',monospace;
+}
+.stops-entry input:focus{border-color:var(--amber)}
+.btn{
+  background:var(--amber);color:#181000;font-weight:800;font-size:13.5px;
+  border-radius:12px;padding:11px 18px 10px;letter-spacing:.02em;
+  transition:transform .12s;
+}
+.btn:hover{transform:translateY(-1px)}
+.btn.ghost{background:var(--panel);color:var(--paint);border:1px solid var(--line)}
+.btn.wide{width:100%;padding:13px;font-size:14.5px;margin-top:10px}
+.sample-link{
+  font-size:12px;color:var(--dim);text-decoration:underline;text-underline-offset:3px;
+  margin-bottom:12px;display:inline-block;
+}
+.sample-link:hover{color:var(--amber)}
+.stops-list{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
+.stop-chip{
+  display:flex;align-items:center;gap:11px;background:var(--panel);
+  border:1px solid var(--line);border-radius:12px;padding:9px 12px;text-align:left;width:100%;
+  transition:border-color .15s;
+}
+.stop-chip:hover{border-color:var(--amber)}
+.stop-chip.done{opacity:.45}
+.stop-unit{
+  font-family:'Overpass Mono',monospace;font-size:16px;font-weight:700;width:64px;flex:none;
+}
+.floorbadge{
+  flex:none;font-family:'Overpass Mono',monospace;font-size:11px;font-weight:700;
+  background:var(--panel2);border:1px solid var(--bldg-line);border-radius:7px;
+  padding:3px 7px 2px;color:var(--amber);
+}
+.stop-where{flex:1;font-size:12px;color:var(--dim)}
+.stop-x{color:var(--dim);font-size:16px;padding:2px 6px}
+.stop-x:hover{color:var(--danger)}
+.legend{
+  display:flex;gap:14px;font-size:10.5px;color:var(--dim);margin-top:8px;
+  letter-spacing:.04em;
+}
+.legend span{display:flex;align-items:center;gap:5px}
+.dot{width:9px;height:9px;border-radius:3px;display:inline-block}
+
+.mapwrap{
+  background:#0E1319;border:1px solid var(--line);border-radius:var(--radius);
+  overflow:hidden;position:relative;
+}
+.mapwrap svg{display:block;width:100%;height:auto}
+.map-caption{
+  position:absolute;top:10px;left:12px;font-size:10px;font-weight:800;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--dim);
+}
+
+/* map svg pieces (classes used from JS) */
+.b-label{font-family:'Overpass Mono',monospace;font-size:11px;font-weight:700;fill:var(--dim)}
+.b-rect{fill:var(--bldg);stroke:var(--bldg-line);stroke-width:1.2}
+.b-rect.hot{fill:var(--amber-soft);stroke:var(--amber);stroke-width:1.6}
+.f-label{font-size:8.5px;font-weight:700;fill:#5B6577;letter-spacing:.12em}
+.pin-bubble{fill:#0D1117;stroke:var(--amber);stroke-width:1.2}
+.pin-text{font-family:'Overpass Mono',monospace;font-size:10.5px;font-weight:700;fill:var(--amber)}
+.pulse-ring{fill:none;stroke:var(--amber);stroke-width:2;opacity:.8;transform-origin:center;animation:hazard 1.6s ease-out infinite}
+@keyframes hazard{0%{opacity:.85}50%{opacity:.15}100%{opacity:.85}}
+
+/* ===== Guide overlay ===== */
+.guide{
+  position:absolute;inset:0;z-index:50;background:var(--asphalt);
+  display:none;flex-direction:column;padding:54px 22px 22px;
+  border-radius:40px;
+}
+.guide.open{display:flex;animation:slideup .3s cubic-bezier(.2,.8,.2,1)}
+@keyframes slideup{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.guide-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.guide-step{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.guide-close{color:var(--dim);font-size:22px;padding:4px 10px}
+.guide-unit{
+  font-family:'Overpass Mono',monospace;font-size:56px;font-weight:700;
+  letter-spacing:.02em;line-height:1;margin:10px 0 4px;
+}
+.guide-where{font-size:15px;font-weight:700;color:var(--amber);margin-bottom:4px}
+.guide-note{font-size:12.5px;color:var(--dim);line-height:1.5;margin-bottom:12px}
+.compass{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:20px;
+  margin-bottom:14px;position:relative;overflow:hidden;
+}
+.compass .arrow{animation:steer 4s ease-in-out infinite}
+@keyframes steer{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(9deg)}}
+.dist{font-family:'Overpass Mono',monospace;font-size:40px;font-weight:700}
+.dist small{font-size:15px;color:var(--dim);font-weight:600}
+.guide-dir{font-size:14px;font-weight:700;text-align:center;line-height:1.45;max-width:260px}
+.sim-tag{
+  position:absolute;top:12px;right:14px;font-size:9px;font-weight:800;
+  letter-spacing:.14em;color:var(--dim);text-transform:uppercase;opacity:.7;
+}
+.guide-steps{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.gstep{display:flex;gap:10px;font-size:12.5px;color:var(--dim);line-height:1.4}
+.gstep b{color:var(--paint)}
+.gstep .n{
+  flex:none;width:18px;height:18px;border-radius:6px;background:var(--panel2);
+  font-family:'Overpass Mono',monospace;font-size:10px;font-weight:700;color:var(--amber);
+  display:grid;place-items:center;margin-top:1px;
+}
+.btn.deliver{background:var(--teal);color:#03251B}
+
+/* ===== Contribute ===== */
+.contrib-steps{display:flex;gap:6px;margin-bottom:16px}
+.cstep-dot{height:4px;flex:1;border-radius:99px;background:var(--panel2)}
+.cstep-dot.on{background:var(--amber)}
+.viewfinder{
+  aspect-ratio:1/1.06;border:2px dashed var(--line);border-radius:18px;
+  display:flex;align-items:center;justify-content:center;position:relative;
+  background:radial-gradient(circle at 50% 45%, #1B2230 0%, #10151D 75%);
+  margin-bottom:14px;overflow:hidden;
+}
+.vf-corner{position:absolute;width:26px;height:26px;border:3px solid var(--amber)}
+.vf-corner.tl{top:12px;left:12px;border-right:none;border-bottom:none;border-radius:6px 0 0 0}
+.vf-corner.tr{top:12px;right:12px;border-left:none;border-bottom:none;border-radius:0 6px 0 0}
+.vf-corner.bl{bottom:12px;left:12px;border-right:none;border-top:none;border-radius:0 0 0 6px}
+.vf-corner.br{bottom:12px;right:12px;border-left:none;border-top:none;border-radius:0 0 6px 0}
+.shutter{
+  width:66px;height:66px;border-radius:50%;background:var(--paint);
+  border:5px solid #0D1117;box-shadow:0 0 0 3px var(--paint);
+  margin:0 auto;display:block;transition:transform .1s;
+}
+.shutter:active{transform:scale(.92)}
+.trace-wrap{
+  border:1px solid var(--line);border-radius:18px;background:#0E1319;
+  margin-bottom:14px;overflow:hidden;position:relative;
+}
+.trace-wrap svg{display:block;width:100%;height:auto}
+.trace-b{fill:var(--amber-soft);stroke:var(--amber);stroke-width:1.5;opacity:0}
+.trace-b.drawn{opacity:1;transition:opacity .4s ease}
+.label-row{
+  display:flex;align-items:center;gap:10px;background:var(--panel);
+  border:1px solid var(--line);border-radius:11px;padding:10px 13px;margin-bottom:7px;
+  font-size:13px;
+}
+.label-row .mono{color:var(--amber);font-weight:700}
+.label-row .grow{flex:1;color:var(--dim);font-size:12px}
+.floorseg{display:flex;gap:4px;flex:none}
+.floorseg span{font-size:10px;color:var(--dim);align-self:center;margin-right:2px;letter-spacing:.06em}
+.floorseg button{
+  width:26px;height:26px;border-radius:7px;background:var(--panel2);
+  border:1px solid var(--bldg-line);font-family:'Overpass Mono',monospace;
+  font-size:11px;font-weight:700;color:var(--dim);
+}
+.floorseg button.on{background:var(--amber);color:#181000;border-color:var(--amber)}
+.contrib-form{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;margin:12px 0}
+.cf-row2{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px}
+.cf-row2 .k{color:var(--dim);width:72px;flex:none;font-size:12px}
+.seg2{display:flex;gap:5px;flex:1}
+.seg2 button{
+  flex:1;padding:7px 4px 6px;border-radius:9px;background:var(--panel2);
+  border:1px solid var(--bldg-line);font-size:11px;font-weight:700;color:var(--dim);
+}
+.seg2 button.on{background:var(--amber);color:#181000;border-color:var(--amber)}
+.contrib-form input[type=text]{
+  flex:1;background:#0D1117;border:1px solid var(--line);border-radius:9px;
+  padding:8px 11px;color:var(--amber);font-size:14px;outline:none;
+  font-family:'Overpass Mono',monospace;letter-spacing:.1em;min-width:0;
+}
+.contrib-form input[type=text]:focus{border-color:var(--amber)}
+.contrib-form textarea{
+  width:100%;background:#0D1117;border:1px solid var(--line);border-radius:9px;
+  padding:9px 11px;color:var(--paint);font-size:12.5px;line-height:1.5;outline:none;
+  font-family:inherit;resize:none;height:64px;margin-top:4px;
+}
+.contrib-form textarea:focus{border-color:var(--amber)}
+.tip-hint{font-size:11px;color:var(--amber);margin-top:6px;line-height:1.45}
+.published{
+  text-align:center;padding:34px 10px 10px;
+}
+.published .bigcheck{
+  width:74px;height:74px;border-radius:50%;background:rgba(63,208,164,.12);
+  border:2px solid var(--teal);display:grid;place-items:center;margin:0 auto 18px;
+}
+.published h3{font-size:21px;font-weight:900;margin-bottom:8px}
+.published p{font-size:13.5px;color:var(--dim);line-height:1.55;max-width:270px;margin:0 auto 20px}
+.published p b{color:var(--teal)}
+
+/* toast */
+.toast{
+  position:absolute;left:50%;bottom:96px;transform:translateX(-50%) translateY(10px);
+  background:#0D1117;border:1px solid var(--line);color:var(--paint);
+  font-size:12.5px;font-weight:700;padding:10px 16px;border-radius:11px;
+  opacity:0;pointer-events:none;transition:opacity .2s, transform .2s;z-index:70;
+  white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.empty{
+  text-align:center;padding:60px 24px;color:var(--dim);font-size:13.5px;line-height:1.6;
+}
+.empty b{color:var(--paint)}
+
+/* ===== Responsive ===== */
+@media (max-width:900px){
+  .stage{grid-template-columns:1fr;gap:34px;padding:28px 16px 60px;justify-items:center}
+  .pitch{text-align:center;order:2}
+  .wordmark{justify-content:center}
+  .netline{text-align:left}
+  .how-item{text-align:left}
+  .device{order:1;max-width:100%;height:760px}
+}
+@media (max-width:430px){
+  .device{width:100%;height:78vh;min-height:640px;border-radius:34px;padding:7px}
+  .screen{border-radius:28px}
+  .guide{border-radius:28px}
+}
+@media (prefers-reduced-motion:reduce){
+  .pulse-ring,.compass .arrow{animation:none}
+  .view.active,.guide.open{animation:none}
+}
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <!-- ===== Pitch panel ===== -->
+  <aside class="pitch">
+    <p class="eyebrow">App concept · Interactive prototype</p>
+    <div class="wordmark">
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+        <rect x="2" y="2" width="36" height="36" rx="9" fill="#1A202B" stroke="#2C3644"/>
+        <rect x="8" y="8" width="10" height="10" rx="2" fill="#3A4657"/>
+        <rect x="22" y="8" width="10" height="10" rx="2" fill="#3A4657"/>
+        <rect x="8" y="22" width="10" height="10" rx="2" fill="#3A4657"/>
+        <rect x="22" y="22" width="10" height="10" rx="2" fill="#FFB020"/>
+        <circle cx="27" cy="27" r="2.4" fill="#12161D"/>
+      </svg>
+      <span>Grid<em>Drop</em></span>
+    </div>
+    <h1>Stop hunting.<br>The complex is <span class="amber">already mapped.</span></h1>
+    <p class="sub">GridDrop turns any apartment complex into a driver's map — your unit numbers pinned to the right building, the floor level called out, and the gate code on screen before you're off the main road.</p>
+
+    <div class="how">
+      <div class="how-item">
+        <div class="tick">1</div>
+        <div><b>Pick the complex</b><p>Pull from the network — complexes other drivers have already mapped.</p></div>
+      </div>
+      <div class="how-item">
+        <div class="tick">2</div>
+        <div><b>Drop in your unit numbers</b><p>Type the apartments on your run. GridDrop pins each one to its building and tells you the floor.</p></div>
+      </div>
+      <div class="how-item">
+        <div class="tick">3</div>
+        <div><b>Follow the pin</b><p>Gate code, turn-by-turn to the building, which stairwell, what floor. Hazards on, in and out.</p></div>
+      </div>
+    </div>
+
+    <div class="netline">One driver maps a complex once — <b>every driver after them</b> skips the hunt. That's the network.</div>
+
+    <p class="fineprint">Prototype with demo data. In the real app, gate codes and access notes are visible to verified couriers only, and complexes can claim &amp; manage their listing. Try the phone: pick a complex, load a sample route, tap a stop.</p>
+    <p style="margin-top:18px"><a href="pitch.html" style="color:var(--amber);font-size:13px;font-weight:700;text-decoration:none;letter-spacing:.04em">Read the full pitch — who it's for &amp; how it makes money &rarr;</a></p>
+  </aside>
+
+  <!-- ===== Device ===== -->
+  <div class="device">
+    <div class="screen">
+      <div class="notch"></div>
+      <div class="statusbar"><span>9:41</span><span>▲▲▲ ▮▮</span></div>
+
+      <main class="app-main" id="appMain">
+
+        <!-- NETWORK -->
+        <section class="view active" id="view-network">
+          <h1 class="h-screen">Near you</h1>
+          <p class="h-sub">Complexes in the GridDrop network — mapped by drivers like you.</p>
+          <div class="searchbox">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8C96A6" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input type="text" placeholder="Search complexes or addresses" aria-label="Search complexes">
+          </div>
+          <div id="cxList"></div>
+        </section>
+
+        <!-- ROUTE -->
+        <section class="view" id="view-route"></section>
+
+        <!-- CONTRIBUTE -->
+        <section class="view" id="view-add"></section>
+
+      </main>
+
+      <!-- Guide overlay -->
+      <div class="guide" id="guide"></div>
+
+      <nav class="tabbar">
+        <button class="tab active" data-tab="network" aria-label="Network tab">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          Network
+        </button>
+        <button class="tab" data-tab="route" aria-label="Route tab">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+          My route
+        </button>
+        <button class="tab" data-tab="add" aria-label="Map a complex tab">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3.2"/></svg>
+          Map one
+        </button>
+      </nav>
+
+      <div class="toast" id="toast" role="status"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   GridDrop prototype — demo data + app state
+============================================================ */
+
+// Build a complex's unit index: each building lists floors and which
+// unit numbers live on each floor. This is the core value of the app —
+// unit numbers rarely encode the floor, but the map knows.
+function bldgUnits(prefix, perFloor, floors){
+  const map = {};
+  let n = 1;
+  for(let f=1; f<=floors; f++){
+    for(let i=0; i<perFloor; i++){
+      map[`${prefix}${String(n).padStart(2,'0')}`] = f;
+      n++;
+    }
+  }
+  return map;
+}
+
+const COMPLEXES = {
+  stonebridge: {
+    id:'stonebridge',
+    name:'Stonebridge Crossing',
+    addr:'2200 Stonebridge Pkwy',
+    dist:'0.3 mi', mappedBy:'Mapped by 12 drivers', mapped:true,
+    gate:{code:'#4482', label:'Gate code'},
+    access:[
+      ['Bldg doors','Locked after 8 PM — fob at office till 6'],
+      ['Drop-off','Leave-at-door OK, photo required'],
+      ['Office','Mon–Sat 9–6, inside the loop']
+    ],
+    floorNote:'Heads up: unit numbers here don\'t tell you the floor. 01–04 = floor 1, 05–08 = floor 2, 09–12 = floor 3.',
+    viewBox:'0 0 360 580',
+    entrance:{x:180,y:568,label:'ENTRANCE'},
+    roads:[
+      {type:'rect',x:90,y:110,w:180,h:360,rx:26},
+      {type:'path',d:'M180,568 L180,470'}
+    ],
+    features:[
+      {x:116,y:146,w:60,h:44,rx:8,label:'OFFICE'},
+      {x:188,y:146,w:60,h:44,rx:16,label:'POOL'},
+      {x:146,y:222,w:68,h:30,rx:6,label:'MAIL'},
+      {x:180,y:508,gate:true}
+    ],
+    buildings:[
+      {n:1,  x:20, y:396,w:56,h:64},
+      {n:2,  x:20, y:316,w:56,h:64},
+      {n:3,  x:20, y:236,w:56,h:64},
+      {n:4,  x:20, y:156,w:56,h:64},
+      {n:5,  x:92, y:28, w:72,h:56},
+      {n:6,  x:196,y:28, w:72,h:56},
+      {n:7,  x:284,y:156,w:56,h:64},
+      {n:8,  x:284,y:236,w:56,h:64},
+      {n:9,  x:284,y:316,w:56,h:64},
+      {n:10, x:284,y:396,w:56,h:64},
+      {n:11, x:84, y:490,w:72,h:56},
+      {n:12, x:204,y:490,w:72,h:56}
+    ].map(b => ({...b, label:'BLDG '+b.n, units:bldgUnits(String(b.n), 4, 3)}))
+  },
+
+  lakeview: {
+    id:'lakeview',
+    name:'Lakeview Flats',
+    addr:'88 Mirror Lake Dr',
+    dist:'1.2 mi', mappedBy:'Mapped by 5 drivers', mapped:true,
+    gate:null,
+    access:[
+      ['Entry','Open lot — no gate'],
+      ['Bldg doors','Unlocked. Call boxes broken in D & E'],
+      ['Drop-off','Hand-to-resident preferred after 9 PM']
+    ],
+    floorNote:'Letters are buildings, first digit is the floor: B204 = Building B, floor 2.',
+    viewBox:'0 0 360 520',
+    entrance:{x:12,y:280,label:'ENTRANCE'},
+    roads:[
+      {type:'path',d:'M12,280 L348,280'},
+      {type:'path',d:'M110,280 L110,180'},
+      {type:'path',d:'M250,280 L250,380'}
+    ],
+    features:[
+      {x:24,y:36,w:78,h:44,rx:8,label:'OFFICE'},
+      {x:258,y:36,w:78,h:44,rx:16,label:'POOL'},
+      {x:24,y:300,w:60,h:30,rx:6,label:'MAIL'}
+    ],
+    buildings:[
+      {n:'A',x:36, y:110,w:84,h:56},
+      {n:'B',x:140,y:110,w:84,h:56},
+      {n:'C',x:244,y:110,w:84,h:56},
+      {n:'D',x:36, y:360,w:84,h:56},
+      {n:'E',x:140,y:360,w:84,h:56},
+      {n:'F',x:244,y:360,w:84,h:56}
+    ].map(b => {
+      const units = {};
+      for(let f=1; f<=2; f++) for(let i=1; i<=4; i++) units[`${b.n}${f}0${i}`] = f;
+      return {...b, label:'BLDG '+b.n, units};
+    })
+  },
+
+  pinehurst: {
+    id:'pinehurst',
+    name:'Pinehurst Commons',
+    addr:'410 Pinehurst Loop',
+    dist:'0.8 mi', mappedBy:'Not mapped yet', mapped:false
+  }
+};
+
+const state = {
+  tab:'network',
+  cx:null,                       // selected complex id
+  stops:[],                      // {unit, bldg, floor, done}
+  guideIdx:null,
+  contribStep:0,
+  pinehurstMapped:false,
+  contrib:{                      // data the driver enters while mapping
+    floors:{1:2, 2:2, 3:2},      // floors per building
+    gated:false,
+    gateCode:'',
+    drop:'Leave-at-door OK',
+    tip:''
+  }
+};
+
+const $ = s => document.querySelector(s);
+const app = $('#appMain');
+
+/* ---------- helpers ---------- */
+function toast(msg){
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._h);
+  t._h = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+function findUnit(cx, raw){
+  const q = raw.trim().toUpperCase().replace(/^#/,'');
+  if(!q) return null;
+  for(const b of cx.buildings){
+    if(q in b.units) return {unit:q, bldg:b, floor:b.units[q]};
+  }
+  return null;
+}
+function ord(f){ return f===1?'1st floor':f===2?'2nd floor':f===3?'3rd floor':f+'th floor'; }
+
+/* ---------- map renderer ---------- */
+function renderMap(cx){
+  const hotBldgs = new Set(state.stops.map(s=>s.bldg.n));
+  const stopByBldg = {};
+  state.stops.forEach(s=>{ (stopByBldg[s.bldg.n] = stopByBldg[s.bldg.n]||[]).push(s); });
+
+  let svg = `<svg viewBox="${cx.viewBox}" role="img" aria-label="Site map of ${cx.name}">`;
+
+  // roads
+  for(const r of cx.roads){
+    if(r.type==='rect')
+      svg += `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="${r.rx}" fill="none" stroke="var(--road)" stroke-width="18"/>
+              <rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="${r.rx}" fill="none" stroke="#39445A" stroke-width="1.4" stroke-dasharray="7 9"/>`;
+    else
+      svg += `<path d="${r.d}" fill="none" stroke="var(--road)" stroke-width="18" stroke-linecap="round"/>
+              <path d="${r.d}" fill="none" stroke="#39445A" stroke-width="1.4" stroke-dasharray="7 9"/>`;
+  }
+
+  // features
+  for(const f of cx.features||[]){
+    if(f.gate){
+      svg += `<g transform="translate(${f.x},${f.y})">
+        <rect x="-26" y="-5" width="52" height="10" rx="4" fill="#0D1117" stroke="var(--amber)" stroke-width="1.4"/>
+        <text x="0" y="2.8" text-anchor="middle" style="font:800 6.5px 'Overpass Mono',monospace;letter-spacing:.14em" fill="var(--amber)">GATE</text>
+      </g>`;
+      continue;
+    }
+    svg += `<rect x="${f.x}" y="${f.y}" width="${f.w}" height="${f.h}" rx="${f.rx}" fill="#1B2230" stroke="#2C3644" stroke-width="1"/>
+            <text class="f-label" x="${f.x+f.w/2}" y="${f.y+f.h/2+3}" text-anchor="middle">${f.label}</text>`;
+  }
+
+  // buildings
+  for(const b of cx.buildings){
+    const hot = hotBldgs.has(b.n);
+    svg += `<rect class="b-rect${hot?' hot':''}" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="7"/>
+            <text class="b-label" x="${b.x+b.w/2}" y="${b.y+b.h/2+4}" text-anchor="middle"${hot?' fill="var(--amber)"':''}>${b.n}</text>`;
+  }
+
+  // pins
+  for(const b of cx.buildings){
+    const stops = stopByBldg[b.n];
+    if(!stops) continue;
+    const cxp = b.x + b.w/2, cyp = b.y;
+    const label = stops.map(s=>`${s.unit}·F${s.floor}`).join('  ');
+    const w = Math.max(58, label.length*6.4 + 16);
+    const active = state.stops.findIndex(s=>!s.done) > -1 &&
+                   state.stops.find(s=>!s.done).bldg.n === b.n;
+    svg += `<g transform="translate(${cxp},${cyp-14})">
+      ${active?`<rect class="pulse-ring" x="${-w/2-4}" y="-14" width="${w+8}" height="28" rx="10"/>`:''}
+      <rect class="pin-bubble" x="${-w/2}" y="-10" width="${w}" height="20" rx="7"/>
+      <text class="pin-text" x="0" y="4" text-anchor="middle">${label}</text>
+      <path d="M0,10 L-5,10 L0,17 L5,10 Z" fill="var(--amber)"/>
+    </g>`;
+  }
+
+  // entrance
+  if(cx.entrance){
+    svg += `<text x="${cx.entrance.x}" y="${cx.entrance.y}" text-anchor="middle" style="font:800 7.5px Overpass;letter-spacing:.2em" fill="#5B6577">▲ ${cx.entrance.label}</text>`;
+  }
+  svg += `</svg>`;
+  return svg;
+}
+
+/* ---------- views ---------- */
+function renderNetwork(){
+  const list = $('#cxList');
+  const rows = Object.values(COMPLEXES).map(c=>{
+    const mapped = c.mapped || (c.id==='pinehurst' && state.pinehurstMapped);
+    return `<button class="cx-card" data-cx="${c.id}">
+      <div class="cx-thumb">
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+          <rect x="2" y="2" width="9" height="9" rx="2" fill="${mapped?'#3A4657':'#242B37'}"/>
+          <rect x="15" y="2" width="9" height="9" rx="2" fill="${mapped?'#3A4657':'#242B37'}"/>
+          <rect x="2" y="15" width="9" height="9" rx="2" fill="${mapped?'#3A4657':'#242B37'}"/>
+          <rect x="15" y="15" width="9" height="9" rx="2" fill="${mapped?'#FFB020':'#242B37'}"/>
+        </svg>
+      </div>
+      <div class="cx-body">
+        <div class="cx-name">${c.name}</div>
+        <div class="cx-meta">${c.addr} · ${c.dist} · ${mapped && c.id==='pinehurst' ? 'Mapped by you' : c.mappedBy}</div>
+      </div>
+      <span class="cx-badge ${mapped?'mapped':'unmapped'}">${mapped?'Mapped':'Map it'}</span>
+    </button>`;
+  }).join('');
+  list.innerHTML = rows;
+  list.querySelectorAll('.cx-card').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const c = COMPLEXES[el.dataset.cx];
+      const mapped = c.mapped || (c.id==='pinehurst' && state.pinehurstMapped);
+      if(!mapped){ setTab('add'); toast('Pinehurst isn\'t mapped yet — map it!'); return; }
+      if(state.cx !== c.id){ state.stops = []; state.guideIdx = null; }
+      state.cx = c.id;
+      setTab('route');
+    });
+  });
+}
+
+function renderRoute(){
+  const v = $('#view-route');
+  if(!state.cx){
+    v.innerHTML = `<div class="empty">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#3A4657" stroke-width="1.6" style="margin-bottom:14px"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+      <br><b>No complex selected.</b><br>Pick one from the Network tab and your route builds here.</div>`;
+    return;
+  }
+  const cx = COMPLEXES[state.cx];
+
+  const accessRows = cx.access.map(([k,val])=>`
+    <div class="access-row"><span class="k">${k}</span><span class="v">${val}</span></div>`).join('');
+
+  const stopRows = state.stops.map((s,i)=>`
+    <div class="stop-chip${s.done?' done':''}">
+      <button class="stop-unit mono" data-guide="${i}" aria-label="Guide to unit ${s.unit}">${s.unit}</button>
+      <span class="floorbadge">F${s.floor}</span>
+      <button class="stop-where" data-guide="${i}">${s.bldg.label} · ${ord(s.floor)}${s.done?' · delivered ✓':''}</button>
+      <button class="stop-x" data-del="${i}" aria-label="Remove unit ${s.unit}">×</button>
+    </div>`).join('');
+
+  v.innerHTML = `
+    <div class="cx-header">
+      <button class="backbtn" id="backToNet" aria-label="Back to network">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <div><h2>${cx.name}</h2><p>${cx.addr} · ${cx.mappedBy}</p></div>
+    </div>
+
+    <div class="access">
+      <div class="access-title">⚿ Access — before you pull in</div>
+      ${cx.gate ? `<div class="access-row"><span class="k">${cx.gate.label}</span>
+        <span class="gatecode">${cx.gate.code}<button id="copyGate">COPY</button></span></div>` : ''}
+      ${accessRows}
+    </div>
+
+    <div class="floornote">${cx.floorNote}</div>
+
+    <div class="stops-entry">
+      <input id="unitInput" type="text" placeholder="Type units — e.g. 204, 512" aria-label="Add unit numbers" autocomplete="off">
+      <button class="btn" id="addStops">Add</button>
+    </div>
+    <button class="sample-link" id="loadSample">Load a sample route</button>
+
+    <div class="stops-list">${stopRows}</div>
+
+    <div class="mapwrap">
+      <span class="map-caption">Site map</span>
+      ${renderMap(cx)}
+    </div>
+    <div class="legend">
+      <span><span class="dot" style="background:var(--amber)"></span> your stops</span>
+      <span><span class="dot" style="background:#242E3C;border:1px solid #3A4657"></span> buildings</span>
+      <span><span class="dot" style="background:#222A36"></span> drive path</span>
+    </div>
+
+    ${state.stops.some(s=>!s.done) ? `<button class="btn wide" id="startGuide">Guide me to the next stop →</button>` : ''}
+  `;
+
+  $('#backToNet').addEventListener('click', ()=>setTab('network'));
+  const input = $('#unitInput');
+  const add = ()=>{
+    const parts = input.value.split(/[,\s]+/).filter(Boolean);
+    if(!parts.length) return;
+    let added = 0, misses = [];
+    for(const p of parts){
+      const hit = findUnit(cx, p);
+      if(!hit){ misses.push(p); continue; }
+      if(state.stops.some(s=>s.unit===hit.unit)) continue;
+      state.stops.push({...hit, done:false});
+      added++;
+    }
+    input.value='';
+    if(misses.length) toast(`Not at this complex: ${misses.join(', ')}`);
+    else if(added) toast(`${added} stop${added>1?'s':''} pinned`);
+    renderRoute();
+  };
+  $('#addStops').addEventListener('click', add);
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter') add(); });
+
+  $('#loadSample').addEventListener('click', ()=>{
+    const samples = cx.id==='lakeview' ? ['B204','E102','A203'] :
+                    cx.id==='pinehurst' ? ['P103','P205'] : ['204','512','1107'];
+    state.stops = samples.map(u=>({...findUnit(cx,u), done:false})).filter(s=>s.unit);
+    renderRoute();
+    toast('Sample route loaded');
+  });
+
+  v.querySelectorAll('[data-del]').forEach(el=>el.addEventListener('click', ()=>{
+    state.stops.splice(+el.dataset.del,1); renderRoute();
+  }));
+  v.querySelectorAll('[data-guide]').forEach(el=>el.addEventListener('click', ()=>{
+    openGuide(+el.dataset.guide);
+  }));
+  const sg = $('#startGuide');
+  if(sg) sg.addEventListener('click', ()=>openGuide(state.stops.findIndex(s=>!s.done)));
+  const cg = $('#copyGate');
+  if(cg) cg.addEventListener('click', ()=>{
+    navigator.clipboard && navigator.clipboard.writeText(cx.gate.code.replace('#',''));
+    toast('Gate code copied');
+  });
+}
+
+/* ---------- guide ---------- */
+let distTimer = null;
+function openGuide(i){
+  if(i<0 || i>=state.stops.length) return;
+  state.guideIdx = i;
+  const cx = COMPLEXES[state.cx];
+  const s = state.stops[i];
+  const g = $('#guide');
+  const stairNote = s.floor===1 ? 'Ground level — door faces the parking side.' :
+                    `Take the ${s.bldg.n===2||s.bldg.n==='B'?'left':'center'} stairwell up to floor ${s.floor}.`;
+
+  g.innerHTML = `
+    <div class="guide-top">
+      <span class="guide-step">Stop ${i+1} of ${state.stops.length}</span>
+      <button class="guide-close" id="closeGuide" aria-label="Close guide">×</button>
+    </div>
+    <div class="guide-unit">${s.unit}</div>
+    <div class="guide-where">${s.bldg.label} · ${ord(s.floor)}</div>
+    <p class="guide-note">${stairNote}</p>
+
+    <div class="compass">
+      <span class="sim-tag">Simulated GPS</span>
+      <svg class="arrow" width="88" height="88" viewBox="0 0 88 88" fill="none" aria-hidden="true">
+        <circle cx="44" cy="44" r="42" stroke="#2C3644" stroke-width="2"/>
+        <path d="M44 14 L60 58 L44 48 L28 58 Z" fill="var(--amber)"/>
+      </svg>
+      <div class="dist"><span id="distNum">340</span> <small>ft</small></div>
+      <p class="guide-dir" id="dirText">${cx.gate?`Enter the gate — code ${cx.gate.code} — then `:''}follow the loop to <b>${s.bldg.label}</b>.</p>
+    </div>
+
+    <div class="guide-steps">
+      ${cx.gate?`<div class="gstep"><span class="n">1</span><span>Keypad at the gate: <b class="mono">${cx.gate.code}</b></span></div>`:''}
+      <div class="gstep"><span class="n">${cx.gate?2:1}</span><span>Park nose-out at <b>${s.bldg.label}</b> — hazards on.</span></div>
+      <div class="gstep"><span class="n">${cx.gate?3:2}</span><span><b>${ord(s.floor)}</b>. ${stairNote}</span></div>
+    </div>
+
+    <button class="btn deliver wide" id="markDone">Mark ${s.unit} delivered ✓</button>
+  `;
+  g.classList.add('open');
+
+  // simulated distance countdown
+  clearInterval(distTimer);
+  let d = 340;
+  distTimer = setInterval(()=>{
+    d = Math.max(15, d - (8 + Math.floor(Math.random()*14)));
+    const el = $('#distNum');
+    if(el) el.textContent = d;
+    if(d<=60){
+      const dir = $('#dirText');
+      if(dir) dir.innerHTML = `<b>${s.bldg.label} on your right.</b> ${ord(s.floor)}, unit ${s.unit}.`;
+    }
+    if(d<=15) clearInterval(distTimer);
+  }, 700);
+
+  $('#closeGuide').addEventListener('click', closeGuide);
+  $('#markDone').addEventListener('click', ()=>{
+    s.done = true;
+    const next = state.stops.findIndex(x=>!x.done);
+    if(next>-1){ openGuide(next); toast(`${s.unit} delivered — next stop`); }
+    else { closeGuide(); toast('Route complete 🏁'); renderRoute(); }
+  });
+}
+function closeGuide(){
+  clearInterval(distTimer);
+  $('#guide').classList.remove('open');
+  renderRoute();
+}
+
+/* ---------- contribute ---------- */
+const TRACE_BLDGS = [
+  {x:30,y:30,w:80,h:50},{x:130,y:30,w:80,h:50},{x:230,y:30,w:80,h:50},
+  {x:30,y:150,w:80,h:50},{x:230,y:150,w:80,h:50}
+];
+function renderAdd(){
+  const v = $('#view-add');
+  const step = state.contribStep;
+  const dots = [0,1,2,3].map(i=>`<div class="cstep-dot${i<=step?' on':''}"></div>`).join('');
+
+  if(step===0){
+    v.innerHTML = `
+      <h1 class="h-screen">Map a complex</h1>
+      <p class="h-sub">Almost every complex posts a site map at the entrance. Snap it — GridDrop does the rest.</p>
+      <div class="contrib-steps">${dots}</div>
+      <div class="viewfinder">
+        <div class="vf-corner tl"></div><div class="vf-corner tr"></div>
+        <div class="vf-corner bl"></div><div class="vf-corner br"></div>
+        <!-- the "YOU ARE HERE" sign, drawn -->
+        <svg width="190" height="230" viewBox="0 0 190 230" aria-label="Entrance site map sign">
+          <rect x="10" y="6" width="170" height="190" rx="8" fill="#D8D2C0"/>
+          <rect x="10" y="6" width="170" height="30" rx="8" fill="#37503E"/>
+          <text x="95" y="26" text-anchor="middle" style="font:800 11px Overpass;letter-spacing:.08em" fill="#F0EBDA">PINEHURST COMMONS</text>
+          <rect x="24" y="48" width="42" height="26" rx="3" fill="#8A8570"/>
+          <rect x="74" y="48" width="42" height="26" rx="3" fill="#8A8570"/>
+          <rect x="124" y="48" width="42" height="26" rx="3" fill="#8A8570"/>
+          <rect x="24" y="120" width="42" height="26" rx="3" fill="#8A8570"/>
+          <rect x="124" y="120" width="42" height="26" rx="3" fill="#8A8570"/>
+          <path d="M24,96 L166,96" stroke="#B9B29C" stroke-width="8"/>
+          <circle cx="95" cy="160" r="7" fill="#C0392B"/>
+          <text x="95" y="184" text-anchor="middle" style="font:800 8px Overpass;letter-spacing:.06em" fill="#5B564A">YOU ARE HERE</text>
+          <rect x="86" y="196" width="18" height="34" fill="#6E6753"/>
+        </svg>
+      </div>
+      <button class="shutter" id="snap" aria-label="Take photo of the site map"></button>`;
+    $('#snap').addEventListener('click', ()=>{ state.contribStep=1; renderAdd(); traceIn(); });
+    return;
+  }
+
+  if(step===1){
+    v.innerHTML = `
+      <h1 class="h-screen">Confirm the layout</h1>
+      <p class="h-sub">GridDrop pulled the buildings from your photo. Drag to adjust, tap to add what it missed.</p>
+      <div class="contrib-steps">${dots}</div>
+      <div class="trace-wrap">
+        <svg viewBox="0 0 340 240">
+          <rect x="0" y="0" width="340" height="240" fill="#10151D"/>
+          <path d="M14,120 L326,120" stroke="#222A36" stroke-width="16" stroke-linecap="round"/>
+          ${TRACE_BLDGS.map((b,i)=>`<rect class="trace-b" id="tb${i}" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="6"/>`).join('')}
+        </svg>
+      </div>
+      <button class="btn wide" id="toLabels">Looks right — label the units →</button>`;
+    $('#toLabels').addEventListener('click', ()=>{ state.contribStep=2; renderAdd(); });
+    return;
+  }
+
+  if(step===2){
+    const c = state.contrib;
+    const floorSeg = b => [1,2,3].map(f =>
+      `<button data-fb="${b}" data-f="${f}" class="${c.floors[b]===f?'on':''}" aria-label="Building ${b}: ${f} floor${f>1?'s':''}">${f}</button>`).join('');
+    v.innerHTML = `
+      <h1 class="h-screen">Label the units</h1>
+      <p class="h-sub">GridDrop read the unit ranges off your photo. Confirm the floors and add what only a driver would know — once, for everyone.</p>
+      <div class="contrib-steps">${dots}</div>
+      <div class="label-row"><span class="mono">BLDG 1</span><span class="grow">Units P101–P110</span><span class="floorseg"><span>FLOORS</span>${floorSeg(1)}</span></div>
+      <div class="label-row"><span class="mono">BLDG 2</span><span class="grow">Units P201–P210</span><span class="floorseg"><span>FLOORS</span>${floorSeg(2)}</span></div>
+      <div class="label-row"><span class="mono">BLDG 3</span><span class="grow">Units P301–P310</span><span class="floorseg"><span>FLOORS</span>${floorSeg(3)}</span></div>
+
+      <div class="contrib-form">
+        <div class="access-title">⚿ Access — what the next driver needs</div>
+        <div class="cf-row2"><span class="k">Entry</span>
+          <span class="seg2">
+            <button id="gNo" class="${c.gated?'':'on'}">Open — no gate</button>
+            <button id="gYes" class="${c.gated?'on':''}">Gated</button>
+          </span>
+        </div>
+        <div class="cf-row2" id="gateRow" style="${c.gated?'':'display:none'}"><span class="k">Gate code</span>
+          <input type="text" id="gCode" maxlength="6" placeholder="#0000" value="${c.gateCode}" aria-label="Gate code">
+        </div>
+        <div class="cf-row2"><span class="k">Drop-off</span>
+          <span class="seg2">
+            ${['Leave-at-door OK','Photo required','Hand to resident'].map(d =>
+              `<button data-drop="${d}" class="${c.drop===d?'on':''}">${d.replace(' OK','')}</button>`).join('')}
+          </span>
+        </div>
+        <div class="cf-row2" style="display:block">
+          <span class="k" style="display:block;width:auto;margin-bottom:2px">Driver tip</span>
+          <textarea id="tipBox" placeholder="The one thing you'd tell the next driver — e.g. how unit numbers map to floors, where not to park...">${c.tip}</textarea>
+          <p class="tip-hint">This note shows first on every route here. It's the thing drivers thank you for.</p>
+        </div>
+      </div>
+      <button class="btn wide" id="publish">Publish to the network</button>`;
+
+    v.querySelectorAll('[data-fb]').forEach(el=>el.addEventListener('click', ()=>{
+      c.floors[+el.dataset.fb] = +el.dataset.f; renderAdd();
+    }));
+    $('#gNo').addEventListener('click', ()=>{ c.gated=false; renderAdd(); });
+    $('#gYes').addEventListener('click', ()=>{ c.gated=true; renderAdd(); $('#gCode').focus(); });
+    const gc = $('#gCode');
+    if(gc) gc.addEventListener('input', ()=>{ c.gateCode = gc.value; });
+    v.querySelectorAll('[data-drop]').forEach(el=>el.addEventListener('click', ()=>{
+      c.drop = el.dataset.drop; renderAdd();
+    }));
+    $('#tipBox').addEventListener('input', e=>{ c.tip = e.target.value; });
+    $('#publish').addEventListener('click', ()=>{
+      if(c.gated && !c.gateCode.trim()){ toast('Add the gate code — drivers need it'); $('#gCode').focus(); return; }
+      state.contribStep=3; renderAdd();
+    });
+    return;
+  }
+
+  // step 3 — published: build Pinehurst from what the driver entered
+  state.pinehurstMapped = true;
+  const c = state.contrib;
+  const code = c.gateCode.trim() ? '#'+c.gateCode.trim().replace(/^#/,'') : null;
+  Object.assign(COMPLEXES.pinehurst, {
+    mapped:true, mappedBy:'Mapped by you',
+    gate: (c.gated && code) ? {code, label:'Gate code'} : null,
+    access:[
+      ['Entry', c.gated ? 'Gated — code on file' : 'Open entrance — no gate'],
+      ['Drop-off', c.drop]
+    ],
+    floorNote: c.tip.trim() || 'P-numbers: second digit is NOT the floor here — check the pin, not the number.',
+    viewBox:'0 0 360 300',
+    entrance:{x:16,y:170,label:'ENTRANCE'},
+    roads:[{type:'path',d:'M16,150 L344,150'}],
+    features:[{x:150,y:34,w:60,h:34,rx:6,label:'MAIL'}],
+    buildings:[
+      {n:1,x:30,y:60,w:84,h:56},{n:2,x:240,y:60,w:84,h:56},{n:3,x:135,y:190,w:84,h:56}
+    ].map(b=>{
+      const floors = c.floors[b.n] || 2;
+      const perFloor = Math.ceil(10/floors);
+      const units={}; let i=1;
+      for(let f=1;f<=floors;f++) for(let k=0;k<perFloor && i<=10;k++){ units[`P${b.n}${String(i).padStart(2,'0')}`]=f; i++; }
+      return {...b, label:'BLDG '+b.n, units};
+    })
+  });
+  v.innerHTML = `
+    <div class="contrib-steps">${dots}</div>
+    <div class="published">
+      <div class="bigcheck">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#3FD0A4" stroke-width="2.6"><path d="M4 12.5l5 5L20 6.5"/></svg>
+      </div>
+      <h3>Pinehurst Commons is live.</h3>
+      <p>Your grid just joined the network. <b>Every driver</b> who pulls in after you skips the hunt — and you'll never map it twice.</p>
+      <p style="margin-top:-8px">Peer check: when <b>2 more drivers</b> confirm your grid on their runs, it earns the Verified badge.</p>
+      <button class="btn" id="seeIt">See it in the network</button>
+    </div>`;
+  $('#seeIt').addEventListener('click', ()=>{ state.contribStep=0; setTab('network'); });
+}
+function traceIn(){
+  TRACE_BLDGS.forEach((b,i)=>{
+    setTimeout(()=>{
+      const el = document.getElementById('tb'+i);
+      if(el) el.classList.add('drawn');
+    }, 350 + i*380);
+  });
+}
+
+/* ---------- tabs ---------- */
+function setTab(tab){
+  state.tab = tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  $('#view-'+(tab==='network'?'network':tab==='route'?'route':'add')).classList.add('active');
+  app.scrollTop = 0;
+  if(tab==='network') renderNetwork();
+  if(tab==='route') renderRoute();
+  if(tab==='add') renderAdd();
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click', ()=>setTab(t.dataset.tab)));
+
+/* ---------- boot ---------- */
+renderNetwork();
+</script>
+</body>
+</html>
