@@ -61,6 +61,25 @@ h2{font-size:20px;font-weight:900;margin:40px 0 8px}
 .f-status{display:none;margin-top:14px;padding:12px 16px;border-radius:10px;font-size:14px;line-height:1.5}
 .f-status.ok{display:block;background:rgba(63,208,164,.1);border:1px solid rgba(63,208,164,.4);color:var(--teal)}
 .f-status.err{display:block;background:rgba(255,107,94,.1);border:1px solid rgba(255,107,94,.4);color:#FFB4AC}
+.mapzone{
+  border:2px dashed var(--amber);border-radius:14px;background:var(--amber-soft);
+  padding:22px;text-align:center;margin-bottom:16px;
+}
+.mapzone .mz-title{font-size:15px;font-weight:800;margin-bottom:4px}
+.mapzone .mz-sub{font-size:12.5px;color:var(--dim);margin-bottom:14px;line-height:1.5}
+.mapzone input[type=file]{
+  width:100%;background:#0D1117;border:1px solid var(--line);border-radius:10px;
+  padding:10px;color:var(--dim);font-size:13px;font-family:inherit;
+}
+.mapzone input[type=file]::file-selector-button{
+  background:var(--amber);color:#181000;border:none;border-radius:8px;
+  padding:8px 14px;font-weight:800;font-family:inherit;margin-right:10px;cursor:pointer;
+}
+.patternbox{
+  background:#0D1117;border:1px solid var(--line);border-radius:12px;
+  padding:16px;margin-bottom:16px;
+}
+.patternbox .pb-title{font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);margin-bottom:10px}
 .zen{
   margin-top:34px;border-left:3px solid var(--teal);background:rgba(63,208,164,.06);
   border-radius:0 12px 12px 0;padding:16px 20px;
@@ -101,6 +120,37 @@ h2{font-size:20px;font-weight:900;margin:40px 0 8px}
 
 <div class="formcard">
 <form id="propForm" novalidate>
+
+  <div class="mapzone">
+    <div class="mz-title">📍 Your site map — the one thing we need most</div>
+    <div class="mz-sub">A phone photo of the printed map your leasing office hands out is perfect. Unit numbers, buildings, everything — we read it all from this one image.</div>
+    <input type="file" id="mapFile" name="attachment" accept="image/*,.pdf"/>
+    <div class="f-group" style="margin:12px 0 0">
+      <input type="text" name="map_link" placeholder="…or paste a link to it (Drive, Dropbox, your website)"/>
+    </div>
+  </div>
+
+  <div class="patternbox">
+    <div class="pb-title">How do your unit numbers work? — the map can't tell us this</div>
+    <div class="f-group"><label>Which floor is a unit on? *</label>
+      <select name="floor_pattern">
+        <option value="">Select the pattern…</option>
+        <option>First digit is the floor (204 = 2nd floor)</option>
+        <option>Number ranges per floor (01–04 ground, 05–08 second…)</option>
+        <option>Numbers run across the property — the number says nothing about the floor</option>
+        <option>Every unit has its own ground-level door (townhome style)</option>
+        <option>Letter is the building, digit is the floor (B204)</option>
+        <option>Other — explained below</option>
+      </select>
+    </div>
+    <div class="f-row">
+      <div class="f-group"><label>One worked example</label><input type="text" name="floor_example" placeholder='e.g. "unit 1107 is Building 11, 2nd floor"'/></div>
+      <div class="f-group"><label>Floors per building</label>
+        <select name="floors_per_bldg"><option>1</option><option>2</option><option selected>3</option><option>4+</option><option>Varies</option></select>
+      </div>
+    </div>
+  </div>
+
   <div class="f-row">
     <div class="f-group"><label>Property name *</label><input type="text" name="property" placeholder="e.g. Napoleon Square"/></div>
     <div class="f-group"><label>Main address *</label><input type="text" name="address" placeholder="6001 Gulfton St, Houston, TX 77081"/></div>
@@ -130,10 +180,6 @@ h2{font-size:20px;font-weight:900;margin:40px 0 8px}
   </div>
   <div class="f-group"><label>Oversize packages go…</label>
     <select name="oversize"><option>To the resident's door</option><option>To the office</option><option>To the front desk</option><option>No policy</option></select>
-  </div>
-  <div class="f-group"><label>Site map</label>
-    <input type="text" name="map_link" placeholder="Paste a link (Drive, Dropbox, photo) — or we'll reply and you can attach it"/>
-    <p class="hint">A phone photo of your printed leasing map is perfect. We turn it into the driver map and send it back for your approval before it goes live.</p>
   </div>
   <div class="f-group"><label>Anything drivers should know</label>
     <textarea name="notes" placeholder="Pickup rules, quiet hours, where not to park, buildings with confusing numbers…"></textarea>
@@ -168,6 +214,10 @@ h2{font-size:20px;font-weight:900;margin:40px 0 8px}
     var data = new FormData(form);
     var email = (data.get('email')||'').trim();
     var prop = (data.get('property')||'').trim();
+    var mapFile = document.getElementById('mapFile');
+    var hasMap = (mapFile.files && mapFile.files.length > 0) || (data.get('map_link')||'').trim();
+    if(!hasMap){ show('The site map is the one thing we need most — add a photo or paste a link to it.', false); return; }
+    if(!(data.get('floor_pattern')||'').trim()){ show('Please pick how your unit numbers map to floors — the map can\'t tell us that.', false); return; }
     if(!prop){ show('Please add your property name.', false); return; }
     if(!email || email.indexOf('@') === -1){ show('Please enter a work email so we can reply.', false); return; }
     if(!(data.get('lockers')||'').trim()){ show('Please tell us whether the property has parcel lockers.', false); return; }
@@ -186,9 +236,13 @@ h2{font-size:20px;font-weight:900;margin:40px 0 8px}
         .catch(function(){ show('Network error — please email us at ' + INBOX + '.', false); })
         .finally(function(){ btn.disabled = false; btn.innerHTML = label; });
     } else {
-      var fields = ['property','address','other_addresses','contact_name','email','phone','units','gated','delivery_model','lockers','locker_details','oversize','map_link','notes'];
+      var fields = ['property','address','other_addresses','contact_name','email','phone','units','floor_pattern','floor_example','floors_per_bldg','gated','delivery_model','lockers','locker_details','oversize','map_link','notes'];
       var body = fields.map(function(f){ return f.replace(/_/g,' ') + ': ' + (data.get(f)||''); }).join('\n');
-      show('Opening your email app to send the submission… If nothing happens, email us at ' + INBOX + '.', true);
+      var fileName = (mapFile.files && mapFile.files.length) ? mapFile.files[0].name : '';
+      if(fileName) body += '\n\n*** SITE MAP: attach "' + fileName + '" to this email before sending ***';
+      show(fileName
+        ? '⚠ Your email app is opening — ATTACH your site map file ("' + fileName + '") to the email before you hit send. It\'s the one thing that can\'t attach itself.'
+        : 'Opening your email app to send the submission… If nothing happens, email us at ' + INBOX + '.', true);
       window.location.href = 'mailto:' + INBOX +
         '?subject=' + encodeURIComponent('GridDrop property submission — ' + prop) +
         '&body=' + encodeURIComponent(body);
