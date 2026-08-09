@@ -763,6 +763,65 @@ const COMPLEXES = {
     buildings:[
       {n:'DESK', x:90, y:40, w:180, h:150, label:'FRONT DESK', units:{}}
     ]
+  },
+
+  // Napoleon Square — REAL layout (leasing map). Too big to map door-by-door
+  // from the photo (~88 buildings, 1,000+ units), so the number PATTERN does
+  // the routing: letters a/b/c/d and number ranges each own a quadrant.
+  // Phase-level map, honestly marked as needing a driver pass for detail.
+  napoleon: {
+    id:'napoleon',
+    name:'Napoleon Square',
+    addr:'6001 Gulfton St, Houston, TX 77081',
+    geo:{lat:29.7118, lng:-95.4770, radius:450},   // approx pin — refine on site
+    dist:'3.8 mi', mappedBy:'Phase-level map — needs a driver pass', mapped:true,
+    gate:null,
+    lockers:null,
+    access:[
+      ['Entrances','All four sides — Gulfton St (main, office axis), Elm St, Rampart St, Renwick St'],
+      ['Office','Dead center of the property, between the four phases'],
+      ['Scale','4 phases · ~88 buildings · 1,000+ units — trust the quadrant rules'],
+      ['Needs','Gate info & building-level detail — serve this route? Tap ✎ below']
+    ],
+    floorNote:'The unit tells you the quadrant: letters a/b = Phase One halves (Renwick side), c/d = Phase Two halves (Rampart side). Plain numbers: 300s–600s Phase Four, 700s–1000s Phase Three. Building signs inside each quadrant take you the rest of the way.',
+    rules:[
+      {re:/^\d{3}A$/, b:'1A'},
+      {re:/^\d{3}B$/, b:'1B'},
+      {re:/^\d{3}C$/, b:'2C'},
+      {re:/^\d{3}D$/, b:'2D'},
+      {re:/^[34]\d{2}$/, b:'4N'},
+      {re:/^[56]\d{2}$/, b:'4S'},
+      {re:/^[78]\d{2}$/, b:'3N'},
+      {re:/^(9\d{2}|10\d{2})$/, b:'3S'}
+    ],
+    viewBox:'0 0 380 430',
+    entrance:{x:190,y:12,label:'GULFTON ST — MAIN'},
+    roads:[
+      {type:'rect',x:14,y:22,w:352,h:390,rx:18},
+      {type:'path',d:'M14,217 L366,217'},
+      {type:'path',d:'M190,22 L190,196'},
+      {type:'path',d:'M190,238 L190,412'}
+    ],
+    features:[
+      {x:160,y:196,w:60,h:20,rx:5,label:'OFFICE'},
+      {text:true,x:103,y:120,label:'PHASE TWO',size:7},
+      {text:true,x:277,y:120,label:'PHASE ONE',size:7},
+      {text:true,x:103,y:320,label:'PHASE THREE',size:7},
+      {text:true,x:277,y:320,label:'PHASE FOUR',size:7},
+      {text:true,x:190,y:426,label:'ELM ST',size:7.5},
+      {text:true,x:8,y:217,label:'RAMPART ST',size:7,rot:-90},
+      {text:true,x:373,y:217,label:'RENWICK ST',size:7,rot:90}
+    ],
+    buildings:[
+      {n:'2C', x:28, y:34, w:150, h:74, label:'PHASE 2 — C UNITS', units:{}},
+      {n:'1A', x:202,y:34, w:150, h:74, label:'PHASE 1 — A UNITS', units:{}},
+      {n:'2D', x:28, y:126,w:150, h:74, label:'PHASE 2 — D UNITS', units:{}},
+      {n:'1B', x:202,y:126,w:150, h:74, label:'PHASE 1 — B UNITS', units:{}},
+      {n:'3N', x:28, y:230,w:150, h:74, label:'PHASE 3 — 700s/800s', units:{}},
+      {n:'4N', x:202,y:230,w:150, h:74, label:'PHASE 4 — 300s/400s', units:{}},
+      {n:'3S', x:28, y:326,w:150, h:74, label:'PHASE 3 — 900s/1000s', units:{}},
+      {n:'4S', x:202,y:326,w:150, h:74, label:'PHASE 4 — 500s/600s', units:{}}
+    ]
   }
 };
 
@@ -806,6 +865,16 @@ function findUnit(cx, raw){
   }
   for(const b of cx.buildings){
     if(q in b.units) return {unit:q, bldg:b, floor:b.units[q]};
+  }
+  // Rule-based match for huge properties: the number's PATTERN encodes
+  // the area (phase/quadrant) even when no one has mapped every door yet
+  if(cx.rules){
+    for(const r of cx.rules){
+      if(r.re.test(q)){
+        const b = cx.buildings.find(x=>String(x.n)===r.b);
+        if(b) return {unit:q, bldg:b, floor:1, approx:true};
+      }
+    }
   }
   return null;
 }
@@ -922,6 +991,10 @@ function renderMap(cx){
 
   // features
   for(const f of cx.features||[]){
+    if(f.text){
+      svg += `<text x="${f.x}" y="${f.y}" text-anchor="middle" style="font:800 ${f.size||8}px Overpass;letter-spacing:.18em" fill="#5B6577"${f.rot?` transform="rotate(${f.rot} ${f.x} ${f.y})"`:''}>${f.label}</text>`;
+      continue;
+    }
     if(f.gate){
       svg += `<g transform="translate(${f.x},${f.y})">
         <rect x="-26" y="-5" width="52" height="10" rx="4" fill="#0D1117" stroke="var(--amber)" stroke-width="1.4"/>
@@ -982,7 +1055,7 @@ function renderMap(cx){
     const stops = stopByBldg[b.n];
     if(!stops) continue;
     const cxp = b.x + b.w/2, cyp = b.y;
-    const label = stops.map(s=>`${s.unit}·F${s.floor}`).join('  ');
+    const label = stops.map(s=>s.approx||s.desk?s.unit:`${s.unit}·F${s.floor}`).join('  ');
     const w = Math.max(58, label.length*6.4 + 16);
     const active = state.stops.findIndex(s=>!s.done) > -1 &&
                    state.stops.find(s=>!s.done).bldg.n === b.n;
@@ -1071,9 +1144,9 @@ function renderRoute(){
     <div class="stop-chip${s.done?' done':''}">
       <span class="stop-ord">${i+1}</span>
       <button class="stop-unit mono" data-guide="${i}" aria-label="Guide to unit ${s.unit}">${s.unit}</button>
-      <span class="floorbadge">${s.desk?'DESK':'F'+s.floor}</span>
+      <span class="floorbadge">${s.desk?'DESK':s.approx?'≈':'F'+s.floor}</span>
       ${note?`<span class="chip-warn" title="${note.text}">${note.icon}</span>`:''}
-      <button class="stop-where" data-guide="${i}">${s.desk?'Concierge — front desk':s.bldg.label+' · '+ord(s.floor)}${s.done?' · delivered ✓':''}</button>
+      <button class="stop-where" data-guide="${i}">${s.desk?'Concierge — front desk':s.approx?s.bldg.label+' · check bldg signs':s.bldg.label+' · '+ord(s.floor)}${s.done?' · delivered ✓':''}</button>
       <button class="stop-x" data-del="${i}" aria-label="Remove unit ${s.unit}">×</button>
     </div>`;}).join('');
 
@@ -1180,7 +1253,8 @@ function renderRoute(){
     const samples = cx.id==='lakeview' ? ['B204','E102','A203'] :
                     cx.id==='pinehurst' ? ['P103','P205'] :
                     cx.id==='valle' ? ['214','130','331'] :
-                    cx.id==='wexford' ? ['1804','905','2210'] : ['204','512','1107'];
+                    cx.id==='wexford' ? ['1804','905','2210'] :
+                    cx.id==='napoleon' ? ['204c','462','816'] : ['204','512','1107'];
     state.stops = samples.map(u=>({...findUnit(cx,u), done:false})).filter(s=>s.unit);
     sortStops(cx);
     renderRoute();
@@ -1258,6 +1332,7 @@ function openGuide(i){
   const s = state.stops[i];
   const g = $('#guide');
   const stairNote = s.desk ? 'Concierge-only building — hand everything to the desk. They deliver upstairs.' :
+                    s.approx ? 'Rule-matched to this quadrant — building signs inside narrow it to the door. Learn something? Tap ✎ for the next driver.' :
                     s.floor===1 ? 'Ground level — door faces the parking side.' :
                     `Take the ${s.bldg.n===2||s.bldg.n==='B'?'left':'center'} stairwell up to floor ${s.floor}.`;
 
@@ -1272,7 +1347,7 @@ function openGuide(i){
       </span>
     </div>
     <div class="guide-unit">${s.unit}</div>
-    <div class="guide-where">${s.desk?'FRONT DESK · Lobby':s.bldg.label+' · '+ord(s.floor)}</div>
+    <div class="guide-where">${s.desk?'FRONT DESK · Lobby':s.approx?s.bldg.label+' · QUADRANT MATCH':s.bldg.label+' · '+ord(s.floor)}</div>
     <p class="guide-note">${stairNote}</p>
     ${doorNote?`<div class="guide-hazard">${doorNote.icon} ${doorNote.text}</div>`:''}
 
@@ -1293,7 +1368,7 @@ function openGuide(i){
       <div class="gstep"><span class="n">3</span><span>All sizes accepted. <b>Never go up to resident floors.</b></span></div>`
       :`${cx.gate?`<div class="gstep"><span class="n">1</span><span>Keypad at the gate: <b class="mono">${cx.gate.code}</b></span></div>`:''}
       <div class="gstep"><span class="n">${cx.gate?2:1}</span><span>Park nose-out at <b>${s.bldg.label}</b> — hazards on.</span></div>
-      <div class="gstep"><span class="n">${cx.gate?3:2}</span><span><b>${ord(s.floor)}</b>. ${stairNote}</span></div>`}
+      <div class="gstep"><span class="n">${cx.gate?3:2}</span><span><b>${s.approx?'Quadrant match':ord(s.floor)}</b>. ${stairNote}</span></div>`}
     </div>
 
     <button class="btn deliver wide" id="markDone">Mark ${s.unit} delivered ✓</button>
@@ -1305,6 +1380,8 @@ function openGuide(i){
     `Stop ${i+1} of ${state.stops.length}. Unit ${s.unit.split('').join(' ')}. ` +
     (s.desk
       ? `Concierge building — everything goes to the front desk. Do not go upstairs. `
+      : s.approx
+      ? `${s.bldg.label} quadrant — check the building signs inside. `
       : `Building ${s.bldg.n}, ${s.floor===1?'ground level':ord(s.floor)}. `) +
     (cx.gate && i===0 ? `Gate code ${cx.gate.code.replace('#','').split('').join(' ')}. ` : '') +
     (doorNote ? `Heads up: ${doorNote.text}.` : '')
