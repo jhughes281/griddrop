@@ -496,8 +496,9 @@ input{font-family:inherit}
           <p class="h-sub">Complexes in the GridDrop network — mapped by drivers like you.</p>
           <div class="searchbox">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8C96A6" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-            <input type="text" placeholder="Search complexes or addresses" aria-label="Search complexes">
+            <input type="text" id="cxSearch" placeholder="Search complexes or any of their addresses" aria-label="Search complexes">
           </div>
+          <button class="btn ghost wide" id="locateBtn" style="margin:-2px 0 14px;padding:11px">📍 Find the complex I'm at</button>
           <div id="cxList"></div>
         </section>
 
@@ -557,6 +558,8 @@ const COMPLEXES = {
     id:'stonebridge',
     name:'Stonebridge Crossing',
     addr:'2200 Stonebridge Pkwy',
+    aliases:['2210 Stonebridge Pkwy — Bldgs 7–12','2190 Stonebridge Pkwy — leasing office'],
+    geo:{lat:29.7350, lng:-95.5610, radius:350},   // demo coords
     dist:'0.3 mi', mappedBy:'Mapped by 12 drivers', mapped:true,
     gate:{code:'#4482', label:'Gate code'},
     lockers:{where:'Smart-locker bank — mail breezeway, inside the loop', code:'#2211'},
@@ -600,6 +603,7 @@ const COMPLEXES = {
     id:'lakeview',
     name:'Lakeview Flats',
     addr:'88 Mirror Lake Dr',
+    geo:{lat:29.7180, lng:-95.5060, radius:300},   // demo coords
     dist:'1.2 mi', mappedBy:'Mapped by 5 drivers', mapped:true,
     gate:null,
     access:[
@@ -638,6 +642,7 @@ const COMPLEXES = {
     id:'pinehurst',
     name:'Pinehurst Commons',
     addr:'410 Pinehurst Loop',
+    geo:{lat:29.6700, lng:-95.5200, radius:300},   // demo coords
     dist:'0.8 mi', mappedBy:'Not mapped yet', mapped:false
   },
 
@@ -653,6 +658,7 @@ const COMPLEXES = {
       id:'valle',
       name:'Valle Vista',
       addr:'9901 Club Creek Dr, Houston, TX 77036',
+      geo:{lat:29.6990, lng:-95.5450, radius:400},  // approx pin — refine on site
       dist:'2.1 mi', mappedBy:'Mapped from the entrance sign · 236 units', mapped:true,
       gate:null,
       lockers:null,
@@ -731,6 +737,7 @@ const COMPLEXES = {
     id:'wexford',
     name:'The Wexford Tower',
     addr:'1200 Main St',
+    geo:{lat:29.7570, lng:-95.3660, radius:250},   // demo coords
     dist:'4.6 mi', mappedBy:'Mapped by 8 drivers', mapped:true,
     concierge:true,
     gate:null,
@@ -765,6 +772,8 @@ const state = {
   stops:[],                      // {unit, bldg, floor, done}
   guideIdx:null,
   voiceOn:true,                  // spoken guidance
+  userPos:null,                  // {lat,lng} once located
+  query:'',                      // network search filter
   contribStep:0,
   pinehurstMapped:false,
   contrib:{                      // data the driver enters while mapping
@@ -801,6 +810,48 @@ function findUnit(cx, raw){
   return null;
 }
 function ord(f){ return f===1?'1st floor':f===2?'2nd floor':f===3?'3rd floor':f+'th floor'; }
+
+/* Straight-line miles between two lat/lng points (haversine) */
+function milesBetween(a, b){
+  const R = 3958.8, toR = d => d*Math.PI/180;
+  const dLat = toR(b.lat-a.lat), dLng = toR(b.lng-a.lng);
+  const h = Math.sin(dLat/2)**2 + Math.cos(toR(a.lat))*Math.cos(toR(b.lat))*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+
+/* GPS result → auto-open the complex you're standing at, or sort by distance.
+   This is also the answer to multi-address properties: you don't need the
+   right street address when your phone knows which property you're on. */
+function applyUserPos(lat, lng){
+  state.userPos = {lat, lng};
+  let nearest = null, nd = Infinity;
+  for(const c of Object.values(COMPLEXES)){
+    if(!c.geo) continue;
+    const d = milesBetween(state.userPos, c.geo);
+    if(d < nd){ nd = d; nearest = c; }
+  }
+  const mapped = nearest && (nearest.mapped || (nearest.id==='pinehurst' && state.pinehurstMapped));
+  if(nearest && nd*1609 <= (nearest.geo.radius||300)){
+    if(mapped){
+      if(state.cx !== nearest.id){ state.stops = []; state.guideIdx = null; }
+      state.cx = nearest.id;
+      setTab('route');
+      toast(`📍 You're at ${nearest.name} — route ready`);
+      speak(`You've arrived at ${nearest.name}.`);
+    } else {
+      setTab('add');
+      toast(`📍 You're at ${nearest.name} — it isn't mapped yet. Map it!`);
+    }
+    return;
+  }
+  if(nd > 30){
+    toast('No mapped complexes near you — showing the Houston network');
+    renderNetwork();
+    return;
+  }
+  renderNetwork();
+  toast('Sorted by distance from you');
+}
 
 /* Spoken guidance — hands on the wheel, eyes on the lot */
 function speak(text){
@@ -954,8 +1005,23 @@ function renderMap(cx){
 /* ---------- views ---------- */
 function renderNetwork(){
   const list = $('#cxList');
-  const rows = Object.values(COMPLEXES).map(c=>{
+  let items = Object.values(COMPLEXES);
+  // search across name + every address the property answers to
+  const q = state.query.trim().toLowerCase();
+  if(q) items = items.filter(c =>
+    c.name.toLowerCase().includes(q) ||
+    c.addr.toLowerCase().includes(q) ||
+    (c.aliases||[]).some(a=>a.toLowerCase().includes(q)));
+  // once located, nearest first with live distances
+  if(state.userPos) items = [...items].sort((a,b)=>
+    (a.geo?milesBetween(state.userPos,a.geo):9e9) - (b.geo?milesBetween(state.userPos,b.geo):9e9));
+  const rows = items.map(c=>{
     const mapped = c.mapped || (c.id==='pinehurst' && state.pinehurstMapped);
+    let dist = c.dist;
+    if(state.userPos && c.geo){
+      const d = milesBetween(state.userPos, c.geo);
+      dist = d*1609 <= (c.geo.radius||300) ? '📍 You are here' : d.toFixed(1)+' mi';
+    }
     return `<button class="cx-card" data-cx="${c.id}">
       <div class="cx-thumb">
         <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
@@ -967,12 +1033,12 @@ function renderNetwork(){
       </div>
       <div class="cx-body">
         <div class="cx-name">${c.name}</div>
-        <div class="cx-meta">${c.addr} · ${c.dist} · ${mapped && c.id==='pinehurst' ? 'Mapped by you' : c.mappedBy}</div>
+        <div class="cx-meta">${c.addr}${c.aliases?` <span style="color:var(--amber)">+${c.aliases.length} more address${c.aliases.length>1?'es':''}</span>`:''} · ${dist} · ${mapped && c.id==='pinehurst' ? 'Mapped by you' : c.mappedBy}</div>
       </div>
       <span class="cx-badge ${mapped?'mapped':'unmapped'}">${mapped?'Mapped':'Map it'}</span>
     </button>`;
   }).join('');
-  list.innerHTML = rows;
+  list.innerHTML = rows || `<div class="empty"><b>No complex matches "${state.query}".</b><br>Large properties answer to several addresses — try the street name, or use 📍 to match by location instead.</div>`;
   list.querySelectorAll('.cx-card').forEach(el=>{
     el.addEventListener('click', ()=>{
       const c = COMPLEXES[el.dataset.cx];
@@ -995,7 +1061,8 @@ function renderRoute(){
   }
   const cx = COMPLEXES[state.cx];
 
-  const accessRows = cx.access.map(([k,val])=>`
+  const accessRows = (cx.aliases ? [['Also listed as', cx.aliases.join(' · ')+' — one property, one map']] : [])
+    .concat(cx.access).map(([k,val])=>`
     <div class="access-row"><span class="k">${k}</span><span class="v">${val}</span></div>`).join('');
 
   const stopRows = state.stops.map((s,i)=>{
@@ -1450,6 +1517,22 @@ function setTab(tab){
   if(tab==='add') renderAdd();
 }
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click', ()=>setTab(t.dataset.tab)));
+
+/* ---------- network search + geolocation ---------- */
+$('#cxSearch').addEventListener('input', e=>{
+  state.query = e.target.value;
+  renderNetwork();
+});
+$('#locateBtn').addEventListener('click', ()=>{
+  if(!('geolocation' in navigator)){ toast('No GPS on this device'); return; }
+  const btn = $('#locateBtn');
+  btn.textContent = '📡 Locating…';
+  navigator.geolocation.getCurrentPosition(
+    pos => { btn.textContent = '📍 Find the complex I\'m at'; applyUserPos(pos.coords.latitude, pos.coords.longitude); },
+    ()  => { btn.textContent = '📍 Find the complex I\'m at'; toast('Location unavailable — check permissions'); },
+    {enableHighAccuracy:true, timeout:8000, maximumAge:30000}
+  );
+});
 
 /* ---------- boot ---------- */
 renderNetwork();
