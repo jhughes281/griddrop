@@ -608,7 +608,62 @@ const COMPLEXES = {
     name:'Pinehurst Commons',
     addr:'410 Pinehurst Loop',
     dist:'0.8 mi', mappedBy:'Not mapped yet', mapped:false
-  }
+  },
+
+  // Mapped from the REAL entrance sign (19 buildings, 236 units).
+  valle: (function(){
+    const R = (a,b)=>{ const u={}; for(let i=a;i<=b;i++) u[String(i)]=1; return u; };
+    return {
+      id:'valle',
+      name:'Valle Vista',
+      addr:'9901 Club Creek Dr, Houston, TX 77036',
+      dist:'2.1 mi', mappedBy:'Mapped from the entrance sign · 236 units', mapped:true,
+      gate:null,
+      access:[
+        ['Entry','No gate — open entrances off Club Creek Dr (main, by the office) & Woodfair Dr'],
+        ['Bldg doors','Every unit has its own ground-level door'],
+        ['Drop-off','Leave-at-door OK'],
+        ['Office','Center of the property — MAIL & LAUNDRY are at the office']
+      ],
+      floorNote:'Numbers run 101–338 across the WHOLE property — the unit number tells you nothing about the building. 219 is NOT building 2, it\'s Building 14. And 153–154 don\'t exist. Trust the pin.',
+      viewBox:'0 0 380 545',
+      entrance:{x:196,y:536,label:'CLUB CREEK DR'},
+      roads:[
+        {type:'path',d:'M14,70 L14,480'},
+        {type:'path',d:'M14,502 L372,502'},
+        {type:'path',d:'M196,502 L196,380'},
+        {type:'path',d:'M78,430 L14,430'}
+      ],
+      features:[
+        {x:186,y:340,w:42,h:28,rx:4,label:'OFFICE'},
+        {x:150,y:344,w:30,h:22,rx:4,label:'PLAY'},
+        {x:120,y:296,w:26,h:20,rx:4,label:'SHOP'},
+        {x:64,y:118,w:34,h:16,rx:3,label:'BOILER'},
+        {x:306,y:372,w:52,h:16,rx:3,label:'LAUNDRY'}
+      ],
+      buildings:[
+        {n:1, x:222,y:428,w:118,h:22,u:R(327,338)},
+        {n:2, x:232,y:340,w:30, h:58,u:R(319,326)},
+        {n:3, x:150,y:296,w:142,h:30,u:R(295,318)},
+        {n:4, x:112,y:255,w:26, h:128,u:R(109,119)},
+        {n:5, x:96, y:400,w:60, h:20,u:R(104,108)},
+        {n:6, x:34, y:400,w:44, h:20,u:R(101,103)},
+        {n:7, x:32, y:262,w:26, h:118,u:R(120,129)},
+        {n:8, x:30, y:140,w:26, h:100,u:R(130,136)},
+        {n:9, x:88, y:196,w:70, h:32,u:R(137,144)},
+        {n:10,x:104,y:132,w:72, h:34,u:R(145,152)},
+        {n:11,x:182,y:150,w:34, h:96,u:R(155,166)},
+        {n:12,x:186,y:84, w:112,h:34,u:R(167,180)},
+        {n:13,x:224,y:140,w:36, h:104,u:R(181,200)},
+        {n:14,x:268,y:130,w:36, h:118,u:R(201,228)},
+        {n:15,x:300,y:66, w:66, h:30,u:R(237,248)},
+        {n:16,x:308,y:118,w:52, h:30,u:R(229,236)},
+        {n:17,x:306,y:252,w:32, h:112,u:R(271,294)},
+        {n:18,x:344,y:252,w:26, h:96,u:R(259,270)},
+        {n:19,x:344,y:152,w:26, h:86,u:R(249,258)}
+      ].map(b=>({...b, label:'BLDG '+b.n, units:b.u}))
+    };
+  })()
 };
 
 const state = {
@@ -827,7 +882,8 @@ function renderRoute(){
 
   $('#loadSample').addEventListener('click', ()=>{
     const samples = cx.id==='lakeview' ? ['B204','E102','A203'] :
-                    cx.id==='pinehurst' ? ['P103','P205'] : ['204','512','1107'];
+                    cx.id==='pinehurst' ? ['P103','P205'] :
+                    cx.id==='valle' ? ['219','130','331'] : ['204','512','1107'];
     state.stops = samples.map(u=>({...findUnit(cx,u), done:false})).filter(s=>s.unit);
     renderRoute();
     toast('Sample route loaded');
