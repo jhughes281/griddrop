@@ -723,7 +723,40 @@ const COMPLEXES = {
         G(19,344,152,13,17.2,[[249,250],[251,252],[253,254],[255,256],[257,258]])
       ]
     };
-  })()
+  })(),
+
+  // Concierge-only high-rise: no unit mapping needed — every package,
+  // every size, goes to the front desk. The map is the hand-off, not the hunt.
+  wexford: {
+    id:'wexford',
+    name:'The Wexford Tower',
+    addr:'1200 Main St',
+    dist:'4.6 mi', mappedBy:'Mapped by 8 drivers', mapped:true,
+    concierge:true,
+    gate:null,
+    lockers:null,
+    access:[
+      ['Entry','15-min loading zone on the Main St side — do not use the garage'],
+      ['Desk','Staffed 24/7 — concierge scans & signs for every package'],
+      ['Oversize','Desk takes all sizes — luggage cart available in the lobby'],
+      ['Do NOT','Go to resident floors — security turns drivers around']
+    ],
+    floorNote:'High-rise, 22 floors — and you never go up. Type any unit: it all routes to the front desk.',
+    viewBox:'0 0 360 270',
+    entrance:{x:180,y:262,label:'MAIN ST — LOADING ZONE'},
+    roads:[{type:'path',d:'M12,240 L348,240'}],
+    decor:{
+      ticks:[{x:126,y:222,step:9,count:13,len:10,dir:'v'}],
+      trees:[[52,214],[308,214]]
+    },
+    features:[
+      {x:24,y:70,w:44,h:110,rx:8,label:'GARAGE'},
+      {x:150,y:158,w:60,h:20,rx:4,label:'FRONT DESK',lockerBank:true}
+    ],
+    buildings:[
+      {n:'DESK', x:90, y:40, w:180, h:150, label:'FRONT DESK', units:{}}
+    ]
+  }
 };
 
 const state = {
@@ -757,6 +790,11 @@ function toast(msg){
 function findUnit(cx, raw){
   const q = raw.trim().toUpperCase().replace(/^#/,'');
   if(!q) return null;
+  // Concierge-only building: every unit routes to the front desk
+  if(cx.concierge){
+    if(!/^\d{2,4}[A-Z]?$/.test(q)) return null;
+    return {unit:q, bldg:cx.buildings[0], floor:1, desk:true};
+  }
   for(const b of cx.buildings){
     if(q in b.units) return {unit:q, bldg:b, floor:b.units[q]};
   }
@@ -966,9 +1004,9 @@ function renderRoute(){
     <div class="stop-chip${s.done?' done':''}">
       <span class="stop-ord">${i+1}</span>
       <button class="stop-unit mono" data-guide="${i}" aria-label="Guide to unit ${s.unit}">${s.unit}</button>
-      <span class="floorbadge">F${s.floor}</span>
+      <span class="floorbadge">${s.desk?'DESK':'F'+s.floor}</span>
       ${note?`<span class="chip-warn" title="${note.text}">${note.icon}</span>`:''}
-      <button class="stop-where" data-guide="${i}">${s.bldg.label} · ${ord(s.floor)}${s.done?' · delivered ✓':''}</button>
+      <button class="stop-where" data-guide="${i}">${s.desk?'Concierge — front desk':s.bldg.label+' · '+ord(s.floor)}${s.done?' · delivered ✓':''}</button>
       <button class="stop-x" data-del="${i}" aria-label="Remove unit ${s.unit}">×</button>
     </div>`;}).join('');
 
@@ -985,12 +1023,45 @@ function renderRoute(){
       ${cx.gate ? `<div class="access-row"><span class="k">${cx.gate.label}</span>
         <span class="gatecode">${cx.gate.code}<button id="copyGate">COPY</button></span></div>` : ''}
       <div class="access-row"><span class="k">Lockers</span>
-        ${cx.lockers
+        ${cx.concierge
+          ? `<span class="v" style="color:var(--teal)">Concierge signs for everything — all sizes to the front desk</span>`
+          : cx.lockers
           ? `<span class="v">${cx.lockers.where}<span class="lockers-chip">${cx.lockers.code}<button id="copyLocker">COPY</button></span></span>`
           : `<span class="v" style="color:var(--dim)">None — doorstep delivery only</span>`}
       </div>
+      ${cx.lockers && !cx.concierge ? `<div class="access-row"><span class="k">Oversize</span><span class="v">${cx.lockers.oversize||"Won't fit the locker — take it to the door"}</span></div>` : ''}
       ${accessRows}
     </div>
+    <button class="sample-link" id="editAccess" style="margin-top:-4px">✎ Driver update — lockers &amp; access info</button>
+    ${state.editAccess ? `
+    <div class="contrib-form" id="accEditor" style="margin-top:2px">
+      <div class="access-title">✎ You serve this route — update it for every driver</div>
+      <div class="cf-row2"><span class="k">Delivery</span>
+        <span class="seg2">
+          <button id="edDoor" class="${!cx.concierge?'on':''}">To the door</button>
+          <button id="edDesk" class="${cx.concierge?'on':''}">Concierge only</button>
+        </span>
+      </div>
+      <div id="lkWrap" style="${cx.concierge?'display:none':''}">
+        <div class="cf-row2"><span class="k">Lockers</span>
+          <span class="seg2">
+            <button id="edNoLk" class="${cx.lockers?'':'on'}">None</button>
+            <button id="edHasLk" class="${cx.lockers?'on':''}">Has lockers</button>
+          </span>
+        </div>
+        <div id="lkFields" style="${cx.lockers?'':'display:none'}">
+          <div class="cf-row2"><span class="k">Where</span><input type="text" id="edWhere" placeholder="e.g. mail room breezeway" value="${cx.lockers?cx.lockers.where:''}" style="letter-spacing:0;font-family:inherit;color:var(--paint)"></div>
+          <div class="cf-row2"><span class="k">Code</span><input type="text" id="edCode" maxlength="6" placeholder="#0000" value="${cx.lockers?cx.lockers.code:''}"></div>
+          <div class="cf-row2"><span class="k">Oversize</span>
+            <span class="seg2">
+              <button data-ov="door" class="edOv on">To the door</button>
+              <button data-ov="office" class="edOv">To the office</button>
+            </span>
+          </div>
+        </div>
+      </div>
+      <button class="btn wide" id="saveAccess">Save for every driver</button>
+    </div>` : ''}
 
     <div class="floornote">${cx.floorNote}</div>
 
@@ -1041,7 +1112,8 @@ function renderRoute(){
   $('#loadSample').addEventListener('click', ()=>{
     const samples = cx.id==='lakeview' ? ['B204','E102','A203'] :
                     cx.id==='pinehurst' ? ['P103','P205'] :
-                    cx.id==='valle' ? ['214','130','331'] : ['204','512','1107'];
+                    cx.id==='valle' ? ['214','130','331'] :
+                    cx.id==='wexford' ? ['1804','905','2210'] : ['204','512','1107'];
     state.stops = samples.map(u=>({...findUnit(cx,u), done:false})).filter(s=>s.unit);
     sortStops(cx);
     renderRoute();
@@ -1066,6 +1138,48 @@ function renderRoute(){
     navigator.clipboard && navigator.clipboard.writeText(cx.lockers.code.replace('#',''));
     toast('Locker code copied');
   });
+
+  // Driver-contributed access updates — the driver who runs the route
+  // knows the locker code; whoever's holding the phone can save it here.
+  $('#editAccess').addEventListener('click', ()=>{
+    state.editAccess = !state.editAccess; renderRoute();
+  });
+  if(state.editAccess){
+    let tmpDesk = !!cx.concierge, tmpLk = !!cx.lockers;
+    let tmpOv = 'door';
+    const sync = ()=>{
+      $('#edDoor').classList.toggle('on', !tmpDesk);
+      $('#edDesk').classList.toggle('on', tmpDesk);
+      $('#lkWrap').style.display = tmpDesk ? 'none' : '';
+      $('#edNoLk').classList.toggle('on', !tmpLk);
+      $('#edHasLk').classList.toggle('on', tmpLk);
+      $('#lkFields').style.display = (tmpLk && !tmpDesk) ? '' : 'none';
+    };
+    $('#edDoor').addEventListener('click', ()=>{ tmpDesk=false; sync(); });
+    $('#edDesk').addEventListener('click', ()=>{ tmpDesk=true; sync(); });
+    $('#edNoLk').addEventListener('click', ()=>{ tmpLk=false; sync(); });
+    $('#edHasLk').addEventListener('click', ()=>{ tmpLk=true; sync(); });
+    document.querySelectorAll('.edOv').forEach(el=>el.addEventListener('click', ()=>{
+      tmpOv = el.dataset.ov;
+      document.querySelectorAll('.edOv').forEach(x=>x.classList.toggle('on', x===el));
+    }));
+    $('#saveAccess').addEventListener('click', ()=>{
+      cx.concierge = tmpDesk;
+      if(tmpDesk){ cx.lockers = null; }
+      else if(tmpLk){
+        const where = ($('#edWhere').value||'').trim() || 'Ask at the office';
+        let code = ($('#edCode').value||'').trim();
+        code = code ? '#'+code.replace(/^#/,'') : '—';
+        cx.lockers = {
+          where, code,
+          oversize: tmpOv==='office' ? 'Oversize → office' : "Won't fit the locker — take it to the door"
+        };
+      } else cx.lockers = null;
+      state.editAccess = false;
+      renderRoute();
+      toast('Saved — every driver here sees this after peer check');
+    });
+  }
 }
 
 /* ---------- guide ---------- */
@@ -1076,7 +1190,8 @@ function openGuide(i){
   const cx = COMPLEXES[state.cx];
   const s = state.stops[i];
   const g = $('#guide');
-  const stairNote = s.floor===1 ? 'Ground level — door faces the parking side.' :
+  const stairNote = s.desk ? 'Concierge-only building — hand everything to the desk. They deliver upstairs.' :
+                    s.floor===1 ? 'Ground level — door faces the parking side.' :
                     `Take the ${s.bldg.n===2||s.bldg.n==='B'?'left':'center'} stairwell up to floor ${s.floor}.`;
 
   const doorNote = (cx.notes||{})[s.unit];
@@ -1090,7 +1205,7 @@ function openGuide(i){
       </span>
     </div>
     <div class="guide-unit">${s.unit}</div>
-    <div class="guide-where">${s.bldg.label} · ${ord(s.floor)}</div>
+    <div class="guide-where">${s.desk?'FRONT DESK · Lobby':s.bldg.label+' · '+ord(s.floor)}</div>
     <p class="guide-note">${stairNote}</p>
     ${doorNote?`<div class="guide-hazard">${doorNote.icon} ${doorNote.text}</div>`:''}
 
@@ -1101,13 +1216,17 @@ function openGuide(i){
         <path d="M44 14 L60 58 L44 48 L28 58 Z" fill="var(--amber)"/>
       </svg>
       <div class="dist"><span id="distNum">340</span> <small>ft</small></div>
-      <p class="guide-dir" id="dirText">${cx.gate?`Enter the gate — code ${cx.gate.code} — then `:''}follow the loop to <b>${s.bldg.label}</b>.</p>
+      <p class="guide-dir" id="dirText">${s.desk?`Pull into the <b>loading zone</b> — the desk is straight through the lobby doors.`:`${cx.gate?`Enter the gate — code ${cx.gate.code} — then `:''}follow the loop to <b>${s.bldg.label}</b>.`}</p>
     </div>
 
     <div class="guide-steps">
-      ${cx.gate?`<div class="gstep"><span class="n">1</span><span>Keypad at the gate: <b class="mono">${cx.gate.code}</b></span></div>`:''}
+      ${s.desk?`
+      <div class="gstep"><span class="n">1</span><span>Park in the <b>loading zone</b> — hazards on.</span></div>
+      <div class="gstep"><span class="n">2</span><span>Hand everything to the <b>concierge desk</b> — they scan &amp; sign.</span></div>
+      <div class="gstep"><span class="n">3</span><span>All sizes accepted. <b>Never go up to resident floors.</b></span></div>`
+      :`${cx.gate?`<div class="gstep"><span class="n">1</span><span>Keypad at the gate: <b class="mono">${cx.gate.code}</b></span></div>`:''}
       <div class="gstep"><span class="n">${cx.gate?2:1}</span><span>Park nose-out at <b>${s.bldg.label}</b> — hazards on.</span></div>
-      <div class="gstep"><span class="n">${cx.gate?3:2}</span><span><b>${ord(s.floor)}</b>. ${stairNote}</span></div>
+      <div class="gstep"><span class="n">${cx.gate?3:2}</span><span><b>${ord(s.floor)}</b>. ${stairNote}</span></div>`}
     </div>
 
     <button class="btn deliver wide" id="markDone">Mark ${s.unit} delivered ✓</button>
@@ -1117,7 +1236,9 @@ function openGuide(i){
   // spoken briefing for this stop
   speak(
     `Stop ${i+1} of ${state.stops.length}. Unit ${s.unit.split('').join(' ')}. ` +
-    `Building ${s.bldg.n}, ${s.floor===1?'ground level':ord(s.floor)}. ` +
+    (s.desk
+      ? `Concierge building — everything goes to the front desk. Do not go upstairs. `
+      : `Building ${s.bldg.n}, ${s.floor===1?'ground level':ord(s.floor)}. `) +
     (cx.gate && i===0 ? `Gate code ${cx.gate.code.replace('#','').split('').join(' ')}. ` : '') +
     (doorNote ? `Heads up: ${doorNote.text}.` : '')
   );
