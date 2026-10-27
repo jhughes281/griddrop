@@ -438,6 +438,49 @@ input{font-family:inherit}
   .pulse-ring,.compass .arrow{animation:none}
   .view.active,.guide.open{animation:none}
 }
+
+/* Refined visual system: lightweight vector artwork stays sharp on every screen. */
+:root{--asphalt:#0d131b;--panel:#17212d;--panel2:#202e3d;--line:#2c3c4d;--dim:#a1afbf;--amber:#ffc16a;--amber-soft:rgba(255,193,106,.11);--teal:#74dec0;--bldg:#263c4c;--bldg-line:#527084;--radius:18px}
+body{background-image:radial-gradient(ellipse at 72% 12%,rgba(73,133,147,.14),transparent 48%),radial-gradient(ellipse at 12% 80%,rgba(255,193,106,.055),transparent 48%);background-attachment:fixed}
+.stage{gap:76px;padding-top:48px;padding-bottom:48px}
+.pitch h1{font-size:clamp(38px,4.6vw,56px);letter-spacing:-.045em;line-height:1.06}
+.pitch .sub{font-size:17px;line-height:1.7}
+.wordmark svg{filter:drop-shadow(0 4px 14px rgba(255,193,106,.16))}
+.how{gap:20px}.how-item .tick{border-radius:12px;background:linear-gradient(145deg,#253342,#17212d);box-shadow:inset 0 1px rgba(255,255,255,.06)}
+.netline{border-left-width:2px;background:linear-gradient(100deg,var(--amber-soft),transparent);padding:14px 18px}
+.device{background:linear-gradient(145deg,#52606d,#10151d 20%,#080d13 70%,#334451);padding:9px;border-color:#52606d;box-shadow:0 42px 90px #0008,0 10px 24px #0005,inset 0 1px 2px #ffffff30}
+.screen{background:radial-gradient(ellipse at 100% 0%,#1d3040 0%,#101923 48%,#0d131b 100%)}
+.h-screen{font-size:26px;letter-spacing:-.04em;margin-top:9px}.h-sub{line-height:1.6;margin-bottom:20px}
+.searchbox{background:#0a121b99;border-color:#344657;border-radius:14px;box-shadow:inset 0 2px 5px #0002;padding:13px}
+.cx-card{position:relative;gap:12px;flex-wrap:wrap;padding:14px;background:linear-gradient(125deg,#1c2a37,#141f2b);border-color:#304151;border-radius:18px;box-shadow:inset 0 1px #ffffff06,0 5px 14px #0002;transition:transform .2s,border-color .2s,box-shadow .2s}
+.cx-card:hover{border-color:#b18b56;box-shadow:0 8px 22px #0003;transform:translateY(-2px)}
+.cx-card:active{transform:scale(.99)}
+.cx-thumb{width:64px;height:70px;border-radius:13px;border-color:#ffffff0c;background:linear-gradient(150deg,#294452,#13222f);overflow:hidden;box-shadow:inset 0 1px #ffffff0a}
+.cx-thumb svg{width:100%;height:100%}.cx-body{flex:1 1 150px}.cx-name{font-size:15px;line-height:1.3;letter-spacing:-.015em;margin-bottom:5px}.cx-meta{font-size:11px;line-height:1.6}
+.cx-badge{margin-left:76px;margin-top:-7px;font-size:9px;letter-spacing:.1em;padding:4px 8px}
+.cx-badge.mapped{background:#74dec013;color:#8be5ce;border:1px solid #74dec022}
+.cx-badge.unmapped{border:1px solid #ffc16a30}
+.btn{background:linear-gradient(135deg,#ffcf88,#f3ad50);box-shadow:inset 0 1px #fff4,0 4px 12px #0002}
+.btn.ghost{background:linear-gradient(120deg,#233140,#192532);box-shadow:inset 0 1px #ffffff08}
+.btn.deliver{background:linear-gradient(120deg,#92ebd2,#57cba8)}
+.access,.contrib-form,.stop-chip,.label-row{background:linear-gradient(130deg,#1b2935,#131e29);box-shadow:inset 0 1px #ffffff05}
+.access{padding:16px}.access-row{padding:7px 0}.floornote{border:1px solid #ffc16a22;line-height:1.65}
+.tabbar{background:linear-gradient(0deg,#0d151ff7,#14212df5);border-color:#344656}
+.tab{border-radius:12px;transition:background .2s,color .2s}.tab.active{background:#ffc16a0d}.tab svg{stroke-width:1.7}
+.mapwrap,.trace-wrap{background:radial-gradient(ellipse at 50% 30%,#1b2e38,#0d1922);border-color:#3d5665;box-shadow:inset 0 1px #ffffff0a}
+.b-rect{fill:#263e4b;stroke:#527486;filter:drop-shadow(0 3px 2px #0005)}
+.b-rect.hot{fill:#5a4730;stroke:#ffcb80;filter:drop-shadow(0 0 4px #ffc16a30)}
+.b-label{fill:#becdd7}.f-label{fill:#99afbb}.pin-bubble{fill:#1b2630;stroke:#ffd18e}.pin-text{fill:#ffd18e}
+.compass{background:radial-gradient(circle at 50% 40%,#29414b,#14232e 68%);border-color:#3c5867;box-shadow:inset 0 1px #ffffff0a}
+.compass:before{content:"";position:absolute;width:250px;height:250px;border:1px solid #ffffff05;border-radius:50%;pointer-events:none;box-shadow:0 0 0 30px #ffffff03,0 0 0 60px #ffffff02}
+.compass>*{position:relative}.compass .sim-tag{position:absolute}.compass .arrow{filter:drop-shadow(0 8px 12px #0005)}
+.viewfinder{border:1px solid #436073;background:radial-gradient(ellipse at 50% 40%,#30494d,#111e29 75%);box-shadow:inset 0 0 50px #0004}
+.viewfinder>svg{filter:drop-shadow(0 18px 15px #0006);transform:perspective(800px) rotateY(-7deg) rotateX(4deg)}
+.vf-corner{border-width:2px;opacity:.8}
+@media(max-width:900px){.stage{gap:42px;padding:28px 16px 60px}.pitch h1{font-size:42px}}
+@media(max-width:430px){.stage{padding:12px 8px 40px}.device{min-height:680px}.pitch{padding:0 14px}.pitch h1{font-size:38px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important}}
+
 </style>
 </head>
 <body>
@@ -1271,6 +1314,27 @@ function renderMap(cx){
 }
 
 /* ---------- views ---------- */
+
+function complexArtwork(c, mapped){
+  const palettes = {stonebridge:['#4d7181','#92b9bd'],lakeview:['#497b87','#9cd2d3'],pinehurst:['#507665','#a7c8a4'],valle:['#7b705b','#d0bd91']};
+  const [wall,roof] = palettes[c.id] || ['#637288','#b0c0d7'];
+  return `<svg viewBox="0 0 80 84" fill="none" aria-hidden="true">
+    <path d="M-6 68 43 43 88 64 37 90Z" fill="#0b1721"/>
+    <path d="M-4 72 43 48 84 68" stroke="#58717b" stroke-width="6"/>
+    <path d="M-4 72 43 48 84 68" stroke="#a9b8ae" stroke-opacity=".5" stroke-dasharray="4 5"/>
+    <path d="M12 31 34 20 55 30 33 42Z" fill="${roof}"/>
+    <path d="M12 31 33 42V65L12 54Z" fill="${wall}"/>
+    <path d="M33 42 55 30V53L33 65Z" fill="#365260"/>
+    <path d="M43 19 56 12 70 19 57 26Z" fill="${roof}" opacity=".8"/>
+    <path d="M43 19 57 26V44L43 37Z" fill="${wall}"/>
+    <path d="M57 26 70 19V37L57 44Z" fill="#365260"/>
+    <path d="M18 39V44M25 43V48M18 48V53M25 52V57M39 44V49M47 40V45M61 28V32" stroke="#f4d7a0" stroke-width="2.7"/>
+    <circle cx="13" cy="62" r="5" fill="#426c60"/><circle cx="67" cy="51" r="6" fill="#426c60"/>
+    <path d="M58 61c0-5 7-9 11-4 4 5-5 13-5 13s-6-5-6-9Z" fill="${mapped?'#ffc16a':'#9baeba'}"/>
+    <circle cx="64" cy="61" r="2.2" fill="#243541"/>
+  </svg>`;
+}
+
 function renderNetwork(){
   const list = $('#cxList');
   let items = Object.values(COMPLEXES);
@@ -1292,12 +1356,7 @@ function renderNetwork(){
     }
     return `<button class="cx-card" data-cx="${c.id}">
       <div class="cx-thumb">
-        <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-          <rect x="2" y="2" width="9" height="9" rx="2" fill="${mapped?'#3A4657':'#242B37'}"/>
-          <rect x="15" y="2" width="9" height="9" rx="2" fill="${mapped?'#3A4657':'#242B37'}"/>
-          <rect x="2" y="15" width="9" height="9" rx="2" fill="${mapped?'#3A4657':'#242B37'}"/>
-          <rect x="15" y="15" width="9" height="9" rx="2" fill="${mapped?'#FFB020':'#242B37'}"/>
-        </svg>
+        ${complexArtwork(c, mapped)}
       </div>
       <div class="cx-body">
         <div class="cx-name">${c.name}</div>
